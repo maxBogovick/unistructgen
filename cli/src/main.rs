@@ -1,11 +1,12 @@
 use anyhow::{Context, Result};
-use clap::{Parser, Subcommand};
+use clap::{Parser as ClapParser, Subcommand};
 use std::fs;
 use std::path::PathBuf;
+use unistructgen_core::{Parser, CodeGenerator};
 use unistructgen_codegen::{RenderOptions, RustRenderer};
 use unistructgen_json_parser::{JsonParser, ParserOptions};
 
-#[derive(Parser)]
+#[derive(ClapParser)]
 #[command(name = "unistructgen")]
 #[command(about = "Generate Rust structs from JSON, Markdown, or SQL", long_about = None)]
 #[command(version)]
@@ -117,10 +118,10 @@ fn generate_code(
         }
     };
 
-    // Generate Rust code
-    let renderer = RustRenderer::new(RenderOptions::default());
-    let generated_code = renderer
-        .render(&ir_module)
+    // Generate Rust code using CodeGenerator trait
+    let generator = RustRenderer::new(RenderOptions::default());
+    let generated_code = generator
+        .generate(&ir_module)
         .context("Failed to generate Rust code")?;
 
     // Output

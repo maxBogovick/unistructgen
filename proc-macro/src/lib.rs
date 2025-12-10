@@ -1,6 +1,7 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, parse::{Parse, ParseStream}, Token, LitStr, LitBool, Ident};
+use unistructgen_core::Parser;
 use unistructgen_codegen::{RenderOptions, RustRenderer};
 use unistructgen_json_parser::{JsonParser, ParserOptions};
 

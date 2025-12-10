@@ -1,14 +1,147 @@
+mod builder;
+
+pub use builder::RustRendererBuilder;
+
 use std::fmt::Write;
 use thiserror::Error;
-use unistructgen_core::{IREnum, IRField, IRModule, IRStruct, IRType, IRTypeRef};
+use unistructgen_core::{CodeGenerator, GeneratorMetadata, IREnum, IRField, IRModule, IRStruct, IRType, IRTypeRef};
 
+/// Errors that can occur during code generation
+///
+/// Each error variant provides detailed context about what went wrong
+/// during the code generation process.
 #[derive(Error, Debug)]
 pub enum CodegenError {
-    #[error("Rendering error: {0}")]
-    RenderError(String),
+    /// Failed to render a specific part of the code
+    ///
+    /// This typically indicates a bug in the generator logic.
+    #[error("Rendering error for {component} in {context}: {message}")]
+    RenderError {
+        /// The component that failed to render (e.g., "struct", "field", "enum")
+        component: String,
+        /// Context where the error occurred (e.g., "User", "Address")
+        context: String,
+        /// Description of what went wrong
+        message: String,
+    },
 
-    #[error("Format error: {0}")]
-    FormatError(#[from] std::fmt::Error),
+    /// String formatting error
+    ///
+    /// This occurs when writing to the output buffer fails.
+    #[error("Format error while rendering {context}: {source}")]
+    FormatError {
+        /// Context where formatting failed
+        context: String,
+        /// The underlying fmt::Error
+        #[source]
+        source: std::fmt::Error,
+    },
+
+    /// Module validation failed
+    ///
+    /// The IR module contains invalid data that cannot be generated.
+    #[error("Validation error: {reason}")]
+    ValidationError {
+        /// Reason why validation failed
+        reason: String,
+        /// Optional suggestion for fixing the issue
+        suggestion: Option<String>,
+    },
+
+    /// Empty or invalid identifier name
+    #[error("Invalid identifier '{name}' in {context}: {reason}")]
+    InvalidIdentifier {
+        /// The invalid identifier name
+        name: String,
+        /// Context where the identifier is used (e.g., "struct name", "field name")
+        context: String,
+        /// Reason why it's invalid
+        reason: String,
+    },
+
+    /// Unsupported type encountered
+    #[error("Unsupported type '{type_name}' in {context}: {reason}")]
+    UnsupportedType {
+        /// The type that is not supported
+        type_name: String,
+        /// Context where the type was encountered
+        context: String,
+        /// Why it's not supported
+        reason: String,
+        /// Optional alternative or workaround
+        alternative: Option<String>,
+    },
+
+    /// Maximum recursion depth exceeded
+    ///
+    /// Prevents stack overflow from deeply nested types.
+    #[error("Maximum recursion depth of {max_depth} exceeded while rendering {context}")]
+    MaxDepthExceeded {
+        /// Context where max depth was reached
+        context: String,
+        /// The maximum allowed depth
+        max_depth: usize,
+    },
+}
+
+impl CodegenError {
+    /// Create a render error
+    pub(crate) fn render_error(
+        component: impl Into<String>,
+        context: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
+        Self::RenderError {
+            component: component.into(),
+            context: context.into(),
+            message: message.into(),
+        }
+    }
+
+    /// Create a validation error
+    pub(crate) fn validation_error(reason: impl Into<String>) -> Self {
+        Self::ValidationError {
+            reason: reason.into(),
+            suggestion: None,
+        }
+    }
+
+    /// Add a suggestion to an error
+    pub fn with_suggestion(mut self, suggestion: impl Into<String>) -> Self {
+        let suggestion = suggestion.into();
+        match &mut self {
+            Self::ValidationError { suggestion: s, .. } => {
+                *s = Some(suggestion);
+            }
+            Self::UnsupportedType { alternative, .. } => {
+                *alternative = Some(suggestion);
+            }
+            _ => {}
+        }
+        self
+    }
+
+    /// Create an invalid identifier error
+    pub(crate) fn invalid_identifier(
+        name: impl Into<String>,
+        context: impl Into<String>,
+        reason: impl Into<String>,
+    ) -> Self {
+        Self::InvalidIdentifier {
+            name: name.into(),
+            context: context.into(),
+            reason: reason.into(),
+        }
+    }
+}
+
+impl From<std::fmt::Error> for CodegenError {
+    fn from(err: std::fmt::Error) -> Self {
+        Self::FormatError {
+            context: "unknown".to_string(),
+            source: err,
+        }
+    }
 }
 
 pub type Result<T> = std::result::Result<T, CodegenError>;
@@ -28,6 +161,33 @@ impl Default for RenderOptions {
     }
 }
 
+/// Rust code generator that converts IR to idiomatic Rust code
+///
+/// This generator implements the [`CodeGenerator`] trait and produces
+/// clean, well-formatted Rust code with proper derives and attributes.
+///
+/// # Features
+///
+/// - **Derive Macros**: Automatically adds Debug, Clone, PartialEq, and optional serde derives
+/// - **Nested Types**: Generates all nested struct definitions
+/// - **Documentation**: Preserves doc comments from IR
+/// - **Formatting**: Produces properly indented, formatted code
+/// - **Type Safety**: Maps IR types to appropriate Rust types
+///
+/// # Examples
+///
+/// ```
+/// use unistructgen_codegen::{RustRenderer, RenderOptions};
+/// use unistructgen_core::{CodeGenerator, IRModule, IRStruct, IRType};
+///
+/// let mut module = IRModule::new("User".to_string());
+/// let user_struct = IRStruct::new("User".to_string());
+/// module.add_type(IRType::Struct(user_struct));
+///
+/// let renderer = RustRenderer::new(RenderOptions::default());
+/// let code = renderer.generate(&module).expect("Failed to generate");
+/// assert!(code.contains("pub struct User"));
+/// ```
 pub struct RustRenderer {
     options: RenderOptions,
 }
@@ -174,6 +334,78 @@ impl RustRenderer {
                 ))
             }
         }
+    }
+}
+
+// Implementation of CodeGenerator trait for RustRenderer
+impl CodeGenerator for RustRenderer {
+    type Error = CodegenError;
+
+    fn generate(&self, module: &IRModule) -> std::result::Result<String, Self::Error> {
+        self.render(module)
+    }
+
+    fn language(&self) -> &'static str {
+        "Rust"
+    }
+
+    fn file_extension(&self) -> &str {
+        "rs"
+    }
+
+    fn validate(&self, module: &IRModule) -> std::result::Result<(), Self::Error> {
+        // Basic validation: ensure module has at least one type
+        if module.types.is_empty() {
+            return Err(CodegenError::validation_error(
+                "Module must contain at least one type"
+            ).with_suggestion(
+                "Ensure the parser generates at least one struct or enum"
+            ));
+        }
+
+        // Validate that all types have valid names
+        for ty in &module.types {
+            match ty {
+                IRType::Struct(s) => {
+                    if s.name.is_empty() {
+                        return Err(CodegenError::invalid_identifier(
+                            "",
+                            "struct name",
+                            "name cannot be empty",
+                        ));
+                    }
+                }
+                IRType::Enum(e) => {
+                    if e.name.is_empty() {
+                        return Err(CodegenError::invalid_identifier(
+                            "",
+                            "enum name",
+                            "name cannot be empty",
+                        ));
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn format(&self, code: String) -> std::result::Result<String, Self::Error> {
+        // For now, just return the code as-is
+        // In the future, could integrate with rustfmt
+        Ok(code)
+    }
+
+    fn metadata(&self) -> GeneratorMetadata {
+        GeneratorMetadata::new()
+            .with_version(env!("CARGO_PKG_VERSION"))
+            .with_description("Generates idiomatic Rust code with derives and documentation")
+            .with_min_language_version("1.70")
+            .with_feature("derive-macros")
+            .with_feature("nested-types")
+            .with_feature("serde-support")
+            .with_feature("doc-comments")
+            .with_feature("type-safety")
     }
 }
 

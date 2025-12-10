@@ -1,20 +1,151 @@
+mod builder;
+
+pub use builder::JsonParserBuilder;
+
 use serde_json::Value;
 use std::collections::HashSet;
 use thiserror::Error;
 use unistructgen_core::{
-    IRField, IRModule, IRStruct, IRType, IRTypeRef, PrimitiveKind,
+    IRField, IRModule, IRStruct, IRType, IRTypeRef, PrimitiveKind, Parser, ParserMetadata,
 };
 
+/// Errors that can occur during JSON parsing
+///
+/// Each error variant provides detailed context about what went wrong
+/// and where in the input it occurred.
 #[derive(Error, Debug)]
 pub enum JsonParserError {
-    #[error("JSON parse error: {0}")]
-    ParseError(#[from] serde_json::Error),
+    /// Failed to parse JSON syntax
+    ///
+    /// This typically means the input is not valid JSON.
+    #[error("JSON syntax error at line {line}, column {column}: {message}")]
+    SyntaxError {
+        /// Line number where the error occurred
+        line: usize,
+        /// Column number where the error occurred
+        column: usize,
+        /// Description of the syntax error
+        message: String,
+        /// The underlying serde_json error
+        #[source]
+        source: serde_json::Error,
+    },
 
-    #[error("Invalid JSON structure: {0}")]
-    InvalidStructure(String),
+    /// The JSON structure is not what was expected
+    ///
+    /// For example, the root must be an object, not an array or primitive.
+    #[error("Invalid JSON structure at path '{path}': expected {expected}, found {found}")]
+    InvalidStructure {
+        /// JSON path where the error occurred (e.g., "$.user.address")
+        path: String,
+        /// What was expected (e.g., "object")
+        expected: String,
+        /// What was actually found (e.g., "array")
+        found: String,
+    },
 
-    #[error("Type inference failed: {0}")]
-    TypeInferenceFailed(String),
+    /// Failed to infer the type of a field
+    ///
+    /// This can happen with ambiguous or unsupported JSON values.
+    #[error("Type inference failed for field '{field}' at path '{path}': {reason}")]
+    TypeInferenceFailed {
+        /// The field name that failed type inference
+        field: String,
+        /// JSON path to the field (e.g., "$.user.metadata")
+        path: String,
+        /// Reason why inference failed
+        reason: String,
+        /// Optional suggestion for fixing the issue
+        suggestion: Option<String>,
+    },
+
+    /// Conflicting types detected when merging multiple samples
+    ///
+    /// This happens when the same field has different types in different samples.
+    #[error("Type conflict for field '{field}' at path '{path}': found both {type1} and {type2}")]
+    TypeConflict {
+        /// The field with conflicting types
+        field: String,
+        /// JSON path to the field
+        path: String,
+        /// First type encountered
+        type1: String,
+        /// Second conflicting type encountered
+        type2: String,
+    },
+
+    /// Invalid field name that cannot be converted to valid Rust identifier
+    #[error("Invalid field name '{original}' at path '{path}': {reason}")]
+    InvalidFieldName {
+        /// The original field name from JSON
+        original: String,
+        /// JSON path where the field is located
+        path: String,
+        /// Reason why the name is invalid
+        reason: String,
+    },
+
+    /// Maximum nesting depth exceeded
+    ///
+    /// Prevents stack overflow from deeply nested JSON structures.
+    #[error("Maximum nesting depth of {max_depth} exceeded at path '{path}'")]
+    MaxDepthExceeded {
+        /// JSON path where max depth was reached
+        path: String,
+        /// The maximum allowed depth
+        max_depth: usize,
+    },
+}
+
+impl JsonParserError {
+    /// Create a syntax error from a serde_json error
+    pub(crate) fn from_serde_error(err: serde_json::Error) -> Self {
+        Self::SyntaxError {
+            line: err.line(),
+            column: err.column(),
+            message: err.to_string(),
+            source: err,
+        }
+    }
+
+    /// Create an invalid structure error
+    pub(crate) fn invalid_structure(
+        path: impl Into<String>,
+        expected: impl Into<String>,
+        found: impl Into<String>,
+    ) -> Self {
+        Self::InvalidStructure {
+            path: path.into(),
+            expected: expected.into(),
+            found: found.into(),
+        }
+    }
+
+    /// Create a type inference error
+    pub(crate) fn type_inference_failed(
+        field: impl Into<String>,
+        path: impl Into<String>,
+        reason: impl Into<String>,
+    ) -> Self {
+        Self::TypeInferenceFailed {
+            field: field.into(),
+            path: path.into(),
+            reason: reason.into(),
+            suggestion: None,
+        }
+    }
+
+    /// Add a suggestion to a type inference error
+    pub fn with_suggestion(mut self, suggestion: impl Into<String>) -> Self {
+        if let Self::TypeInferenceFailed {
+            suggestion: ref mut s,
+            ..
+        } = self
+        {
+            *s = Some(suggestion.into());
+        }
+        self
+    }
 }
 
 pub type Result<T> = std::result::Result<T, JsonParserError>;
@@ -38,6 +169,34 @@ impl Default for ParserOptions {
     }
 }
 
+/// JSON parser that converts JSON input into IR
+///
+/// This parser implements the [`Parser`] trait and provides smart type inference,
+/// field name sanitization, and support for nested structures.
+///
+/// # Features
+///
+/// - **Smart Type Detection**: Automatically detects DateTime, UUID, and other special types
+/// - **Nested Objects**: Generates separate struct types for nested objects
+/// - **Field Naming**: Converts camelCase/PascalCase to snake_case
+/// - **Serde Integration**: Optional serde derive macros and rename attributes
+///
+/// # Examples
+///
+/// ```
+/// use unistructgen_json_parser::{JsonParser, ParserOptions};
+/// use unistructgen_core::Parser;
+///
+/// let json = r#"{"id": 1, "name": "Alice"}"#;
+/// let mut parser = JsonParser::new(ParserOptions {
+///     struct_name: "User".to_string(),
+///     derive_serde: true,
+///     ..Default::default()
+/// });
+///
+/// let module = parser.parse(json).expect("Failed to parse");
+/// assert_eq!(module.types.len(), 1);
+/// ```
 pub struct JsonParser {
     options: ParserOptions,
     /// Generated type names to avoid collisions
@@ -47,43 +206,29 @@ pub struct JsonParser {
 }
 
 impl JsonParser {
+    /// Create a new JSON parser with the given options
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Configuration options for parsing
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use unistructgen_json_parser::{JsonParser, ParserOptions};
+    ///
+    /// let parser = JsonParser::new(ParserOptions {
+    ///     struct_name: "User".to_string(),
+    ///     derive_serde: true,
+    ///     ..Default::default()
+    /// });
+    /// ```
     pub fn new(options: ParserOptions) -> Self {
         Self {
             options,
             type_names: HashSet::new(),
             accumulated_types: Vec::new(),
         }
-    }
-
-    pub fn parse(&mut self, input: &str) -> Result<IRModule> {
-        let value: Value = serde_json::from_str(input)?;
-
-        let struct_name = self.options.struct_name.clone();
-        let mut module = IRModule::new(struct_name.clone());
-
-        match value {
-            Value::Object(obj) => {
-                let root_struct = self.parse_object(&obj, &struct_name)?;
-
-                // Add nested types first, then root
-                for nested_type in self.accumulated_types.drain(..) {
-                    module.add_type(IRType::Struct(nested_type));
-                }
-                module.add_type(IRType::Struct(root_struct));
-            }
-            Value::Array(_arr) => {
-                return Err(JsonParserError::InvalidStructure(
-                    "Root JSON must be an object, not an array".to_string(),
-                ));
-            }
-            _ => {
-                return Err(JsonParserError::InvalidStructure(
-                    "Root JSON must be an object".to_string(),
-                ));
-            }
-        }
-
-        Ok(module)
     }
 
     fn parse_object(
@@ -308,6 +453,74 @@ impl JsonParser {
                 | "await"
                 | "dyn"
         )
+    }
+}
+
+// Implementation of Parser trait for JsonParser
+impl Parser for JsonParser {
+    type Error = JsonParserError;
+
+    fn parse(&mut self, input: &str) -> std::result::Result<IRModule, Self::Error> {
+        let value: Value = serde_json::from_str(input)
+            .map_err(JsonParserError::from_serde_error)?;
+
+        let struct_name = self.options.struct_name.clone();
+        let mut module = IRModule::new(struct_name.clone());
+
+        match value {
+            Value::Object(obj) => {
+                let root_struct = self.parse_object(&obj, &struct_name)?;
+
+                // Add nested types first, then root
+                for nested_type in self.accumulated_types.drain(..) {
+                    module.add_type(IRType::Struct(nested_type));
+                }
+                module.add_type(IRType::Struct(root_struct));
+            }
+            Value::Array(_arr) => {
+                return Err(JsonParserError::invalid_structure(
+                    "$",
+                    "object",
+                    "array",
+                ));
+            }
+            _ => {
+                return Err(JsonParserError::invalid_structure(
+                    "$",
+                    "object",
+                    "primitive value",
+                ));
+            }
+        }
+
+        Ok(module)
+    }
+
+    fn name(&self) -> &'static str {
+        "JSON"
+    }
+
+    fn extensions(&self) -> &[&'static str] {
+        &["json"]
+    }
+
+    fn validate(&self, input: &str) -> std::result::Result<(), Self::Error> {
+        // Quick validation: just check if it's valid JSON
+        serde_json::from_str::<Value>(input)
+            .map_err(JsonParserError::from_serde_error)?;
+        Ok(())
+    }
+
+    fn metadata(&self) -> ParserMetadata {
+        ParserMetadata::new()
+            .with_version(env!("CARGO_PKG_VERSION"))
+            .with_description("Parses JSON with smart type inference and field name sanitization")
+            .with_feature("smart-type-inference")
+            .with_feature("nested-objects")
+            .with_feature("array-support")
+            .with_feature("datetime-detection")
+            .with_feature("uuid-detection")
+            .with_feature("serde-integration")
     }
 }
 
