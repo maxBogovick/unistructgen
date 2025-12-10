@@ -1,0 +1,16 @@
+[package]
+name = "unistructgen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "unistructgen"
+path = "src/main.rs"
+
+[dependencies]
+unistructgen-core = { path = "../core" }
+unistructgen-json-parser = { path = "../parsers/json_parser" }
+unistructgen-codegen = { path = "../codegen" }
+anyhow.workspace = true
+clap = { version = "4.5", features = ["derive"] }

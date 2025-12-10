@@ -1,0 +1,23 @@
+[package]
+name = "unistructgen-macro"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+unistructgen-core = { path = "../core" }
+unistructgen-json-parser = { path = "../parsers/json_parser" }
+unistructgen-codegen = { path = "../codegen" }
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+
+uuid = { version = "1.0", features = ["serde", "v4"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# HTTP client for API calls
+ureq = { version = "2.10", features = ["json"] }
