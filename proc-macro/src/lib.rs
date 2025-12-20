@@ -310,10 +310,12 @@ struct ExternalApiInput {
     struct_name: String,
     url: String,
     method: String,
+    #[allow(dead_code)]
     consumer: String,
     timeout: u64,
     max_entity_count: Option<usize>,
     max_depth: Option<usize>,
+    #[allow(dead_code)]
     conflict_strategy: ConflictStrategy,
     serde: bool,
     default: bool,
@@ -462,6 +464,7 @@ fn fetch_json_from_api(input: &ExternalApiInput) -> Result<String, String> {
 }
 
 /// Merge multiple JSON samples to detect optional fields
+#[allow(dead_code)]
 fn merge_json_samples(samples: Vec<serde_json::Value>) -> serde_json::Value {
     if samples.is_empty() {
         return serde_json::Value::Null;

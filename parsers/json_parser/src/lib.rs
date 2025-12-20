@@ -1,6 +1,11 @@
 mod builder;
+pub mod inference;
 
 pub use builder::JsonParserBuilder;
+pub use inference::{
+    SmartTypeInference, TypeInferenceStrategy, CustomTypeDetector,
+    DateTimeDetector, UuidDetector, EmailDetector, UrlDetector,
+};
 
 use serde_json::Value;
 use std::collections::HashSet;
@@ -122,6 +127,7 @@ impl JsonParserError {
     }
 
     /// Create a type inference error
+    #[allow(dead_code)]
     pub(crate) fn type_inference_failed(
         field: impl Into<String>,
         path: impl Into<String>,

@@ -86,6 +86,7 @@ pub enum CodegenError {
 
 impl CodegenError {
     /// Create a render error
+    #[allow(dead_code)]
     pub(crate) fn render_error(
         component: impl Into<String>,
         context: impl Into<String>,

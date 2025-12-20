@@ -23,8 +23,25 @@ A powerful Rust code generator that creates type-safe structs from JSON, Markdow
 
 ## Installation
 
+### For Proc Macros (Recommended)
+
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+unistructgen-macro = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Optional: for UUID and DateTime support
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["serde", "v4"] }
+```
+
+### For CLI Tool
+
 ```bash
-cargo install --path cli
+cargo install unistructgen
 ```
 
 ## Quick Start
@@ -60,7 +77,7 @@ let user = User { id: 42, name: "Bob".to_string(), email: "bob@example.com".to_s
 
 ### Option 2: External API (Compile-time HTTP)
 
-Fetch and generate from live APIs:
+Fetch and generate from live APIs at compile time:
 
 ```rust
 use unistructgen_macro::struct_from_external_api;
@@ -71,9 +88,22 @@ struct_from_external_api! {
 }
 
 // Structs generated from real API call during compilation!
+// No runtime overhead - all code is generated at compile time!
 ```
 
-See [EXTERNAL_API_GUIDE.md](EXTERNAL_API_GUIDE.md) for full documentation.
+**Advanced options:**
+
+```rust
+struct_from_external_api! {
+    struct_name = "Post",
+    url_api = "https://api.example.com/posts/1",
+    max_depth = 3,              // Limit nested object depth
+    request_timeout = 10000,    // Timeout in milliseconds
+    optional = true,            // Make all fields Option<T>
+    serde = true,               // Add serde derives (default: true)
+    default = true              // Add Default derive
+}
+```
 
 ### Option 3: CLI (Pre-generation)
 
@@ -152,6 +182,34 @@ Options:
   -V, --version             Print version
 ```
 
+## Features
+
+✨ **Key Features:**
+
+- 🚀 **Zero Runtime Overhead** - All code generation happens at compile time
+- 🔍 **Smart Type Inference** - Automatically detects UUID, DateTime, and other special types
+- 🌐 **External API Support** - Generate structs from live API endpoints
+- 🎯 **Type Safety** - Fully type-safe generated code with serde support
+- 🔄 **Nested Objects** - Automatically handles nested structures
+- 📦 **CLI & Macros** - Use as a library or command-line tool
+- 🛠️ **Flexible** - Customize field types, derives, and more
+
+## Documentation
+
+- 📚 [Getting Started Guide](GETTING_STARTED.md) - Step-by-step tutorial
+- 💡 [Examples](EXAMPLES.md) - Real-world usage examples
+- 🔧 [API Documentation](https://docs.rs/unistructgen) - Full API reference
+
+## Use Cases
+
+UniStructGen is perfect for:
+
+- 🌐 **API Client Development** - Generate types from API responses
+- ⚙️ **Configuration Files** - Type-safe config structs from JSON
+- 📊 **Data Processing** - Parse and validate JSON data
+- 🧪 **Testing** - Generate mock data structures
+- 🔄 **Schema Evolution** - Keep types in sync with external schemas
+
 ## Development
 
 ### Build
@@ -166,18 +224,14 @@ cargo build --workspace
 cargo test --workspace
 ```
 
-### Run CLI Examples
+### Run Examples
 
 ```bash
+# CLI example
 cargo run --bin unistructgen -- generate --input examples/user.json --name User
-cargo run --bin unistructgen -- generate --input examples/product.json --name Product
-```
 
-### Run Proc-Macro Example
-
-```bash
-cd examples/proc-macro-example
-cargo run
+# API example (requires network)
+cd examples/api-example && cargo run
 ```
 
 ## Proc-Macro Features
@@ -228,6 +282,55 @@ See [proc-macro/README.md](proc-macro/README.md) for full documentation.
 - Builders, validation generation
 - VSCode extension
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Development Setup
+
+1. Clone the repository
+2. Run `cargo build --workspace`
+3. Run `cargo test --workspace`
+4. Make your changes
+5. Submit a PR
+
+## FAQ
+
+**Q: When should I use proc macros vs CLI?**
+
+A: Use proc macros for schemas known at compile time. Use CLI for build scripts or when you want to commit generated code.
+
+**Q: Does this work with any JSON?**
+
+A: Yes! UniStructGen can handle any valid JSON, including deeply nested objects and arrays.
+
+**Q: What about optional fields?**
+
+A: Use the `optional = true` parameter to make all fields `Option<T>`, or manually edit generated code for specific fields.
+
+**Q: Can I customize the generated code?**
+
+A: Yes! You can either edit the generated code directly or use the transformer API for programmatic customization.
+
+**Q: Does it support other formats?**
+
+A: Currently JSON is fully supported. Markdown tables and SQL DDL are planned for future releases.
+
+## Comparison with Alternatives
+
+| Feature | UniStructGen | serde_json | quicktype |
+|---------|--------------|------------|-----------|
+| Compile-time generation | ✅ | ❌ | ❌ |
+| External API support | ✅ | ❌ | ✅ |
+| Zero runtime overhead | ✅ | ❌ | ✅ |
+| Smart type inference | ✅ | ❌ | ✅ |
+| Rust-specific | ✅ | ✅ | ❌ |
+| Proc macro support | ✅ | ❌ | ❌ |
+
 ## License
 
 MIT OR Apache-2.0
+
+## Acknowledgments
+
+Built with ❤️ using Rust. Special thanks to the Rust community for inspiration and feedback.

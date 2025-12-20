@@ -47,13 +47,12 @@ generate_struct_from_json! {
 }
 
 struct_from_external_api! {
-    struct_name = "UserApi",
+    struct_name = "Exm",
     url_api = "https://jsonplaceholder.typicode.com/todos/1"
 }
 
 #[test]
 fn it_works() {
-
     let company = Company {
         address: Address {
             city: "Odessa".to_string(),

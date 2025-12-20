@@ -1,9 +1,9 @@
 use unistructgen_macro::struct_from_external_api;
 
-// Example 1: Fetch a single user from JSONPlaceholder
 struct_from_external_api! {
     struct_name = "User",
-    url_api = "https://jsonplaceholder.typicode.com/users/1"
+    url_api = "https://jsonplaceholder.typicode.com/users/1",
+
 }
 
 // Example 2: Fetch a single post
@@ -26,8 +26,8 @@ struct_from_external_api! {
     request_timeout = 5000
 }
 
-fn main() {
-    
+#[test]
+fn main_tests() {
     println!("=== API-Generated Structs Demo ===\n");
 
     // Example 1: Single User

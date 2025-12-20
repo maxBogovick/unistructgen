@@ -266,7 +266,9 @@ struct GeneratorEntry {
 
 trait GeneratorWrapper {
     fn generate_wrapped(&self, module: &IRModule) -> Result<String, MultiGeneratorError>;
+    #[allow(dead_code)]
     fn language(&self) -> &'static str;
+    #[allow(dead_code)]
     fn file_extension(&self) -> &str;
 }
 
