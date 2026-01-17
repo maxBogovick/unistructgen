@@ -38,6 +38,8 @@ pub struct IREnum {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IREnumVariant {
     pub name: String,
+    /// Original value from the source (e.g., "open" vs "Open")
+    pub source_value: Option<String>,
     pub doc: Option<String>,
 }
 

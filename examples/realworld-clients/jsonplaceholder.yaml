@@ -1,0 +1,251 @@
+openapi: 3.0.0
+info:
+  title: JSONPlaceholder API
+  description: Free fake API for testing and prototyping
+  version: 1.0.0
+  contact:
+    url: https://jsonplaceholder.typicode.com
+
+servers:
+  - url: https://jsonplaceholder.typicode.com
+    description: Production server
+
+paths:
+  /posts:
+    get:
+      summary: Get all posts
+      operationId: getPosts
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+
+  /posts/{id}:
+    get:
+      summary: Get a single post
+      operationId: getPost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+  /users:
+    get:
+      summary: Get all users
+      operationId: getUsers
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /users/{id}:
+    get:
+      summary: Get a single user
+      operationId: getUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /comments:
+    get:
+      summary: Get all comments
+      operationId: getComments
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+
+components:
+  schemas:
+    Post:
+      type: object
+      required:
+        - id
+        - userId
+        - title
+        - body
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Post ID
+          example: 1
+        userId:
+          type: integer
+          format: int64
+          description: ID of the user who created the post
+          example: 1
+        title:
+          type: string
+          description: Post title
+          minLength: 1
+          maxLength: 200
+          example: "sunt aut facere repellat provident"
+        body:
+          type: string
+          description: Post content
+          minLength: 1
+          maxLength: 5000
+          example: "quia et suscipit\nsuscipit recusandae consequuntur"
+
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - username
+        - email
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: User ID
+          example: 1
+        name:
+          type: string
+          description: Full name
+          minLength: 1
+          maxLength: 100
+          example: "Leanne Graham"
+        username:
+          type: string
+          description: Username
+          minLength: 1
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9._-]+$'
+          example: "Bret"
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: "Sincere@april.biz"
+        address:
+          $ref: '#/components/schemas/Address'
+        phone:
+          type: string
+          description: Phone number
+          example: "1-770-736-8031 x56442"
+        website:
+          type: string
+          format: uri
+          description: Personal website
+          example: "hildegard.org"
+        company:
+          $ref: '#/components/schemas/Company'
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+          example: "Kulas Light"
+        suite:
+          type: string
+          example: "Apt. 556"
+        city:
+          type: string
+          example: "Gwenborough"
+        zipcode:
+          type: string
+          pattern: '^\d{5}(-\d{4})?$'
+          example: "92998-3874"
+        geo:
+          $ref: '#/components/schemas/Geo'
+
+    Geo:
+      type: object
+      properties:
+        lat:
+          type: string
+          description: Latitude
+          example: "-37.3159"
+        lng:
+          type: string
+          description: Longitude
+          example: "81.1496"
+
+    Company:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Romaguera-Crona"
+        catchPhrase:
+          type: string
+          example: "Multi-layered client-server neural-net"
+        bs:
+          type: string
+          example: "harness real-time e-markets"
+
+    Comment:
+      type: object
+      required:
+        - id
+        - postId
+        - name
+        - email
+        - body
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Comment ID
+          example: 1
+        postId:
+          type: integer
+          format: int64
+          description: ID of the post this comment belongs to
+          example: 1
+        name:
+          type: string
+          description: Commenter name
+          minLength: 1
+          maxLength: 200
+          example: "id labore ex et quam laborum"
+        email:
+          type: string
+          format: email
+          description: Commenter email
+          example: "Eliseo@gardner.biz"
+        body:
+          type: string
+          description: Comment content
+          minLength: 1
+          maxLength: 1000
+          example: "laudantium enim quasi est quidem magnam voluptate"

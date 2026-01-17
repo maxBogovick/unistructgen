@@ -1,0 +1,351 @@
+openapi: 3.0.0
+info:
+  title: Blog API
+  version: 1.0.0
+  description: |
+    A simple blog API demonstrating UniStructGen's power:
+    - Auto-generated types from OpenAPI spec
+    - Compile-time type safety
+    - Automatic validation
+    - Zero boilerplate
+
+paths:
+  /posts:
+    get:
+      summary: List all blog posts
+      operationId: listPosts
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  total:
+                    type: integer
+
+    post:
+      summary: Create a new blog post
+      operationId: createPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePost'
+      responses:
+        '201':
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /posts/{id}:
+    get:
+      summary: Get post by ID
+      operationId: getPost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Post details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update post
+      operationId: updatePost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePost'
+      responses:
+        '200':
+          description: Post updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+    delete:
+      summary: Delete post
+      operationId: deletePost
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Post deleted
+
+  /posts/{id}/comments:
+    get:
+      summary: Get comments for a post
+      operationId: getComments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+
+    post:
+      summary: Add comment to post
+      operationId: addComment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateComment'
+      responses:
+        '201':
+          description: Comment added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+
+components:
+  schemas:
+    Post:
+      type: object
+      required:
+        - id
+        - title
+        - content
+        - author
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique post identifier
+        title:
+          type: string
+          minLength: 5
+          maxLength: 200
+          description: Post title
+        content:
+          type: string
+          minLength: 10
+          maxLength: 10000
+          description: Post content in Markdown
+        author:
+          type: string
+          minLength: 2
+          maxLength: 100
+          pattern: '^[a-zA-Z0-9_-]+$'
+          description: Author username
+        tags:
+          type: array
+          items:
+            type: string
+            pattern: '^[a-z0-9-]+$'
+          maxItems: 10
+          description: Post tags
+        status:
+          type: string
+          enum: [draft, published, archived]
+          description: Post publication status
+        view_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of views
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    CreatePost:
+      type: object
+      required:
+        - title
+        - content
+        - author
+      properties:
+        title:
+          type: string
+          minLength: 5
+          maxLength: 200
+          example: "Getting Started with Rust"
+        content:
+          type: string
+          minLength: 10
+          maxLength: 10000
+          example: "Rust is an amazing systems programming language..."
+        author:
+          type: string
+          minLength: 2
+          maxLength: 100
+          pattern: '^[a-zA-Z0-9_-]+$'
+          example: "john_doe"
+        tags:
+          type: array
+          items:
+            type: string
+            pattern: '^[a-z0-9-]+$'
+          maxItems: 10
+          example: ["rust", "programming", "tutorial"]
+        status:
+          type: string
+          enum: [draft, published]
+          default: draft
+
+    UpdatePost:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 5
+          maxLength: 200
+        content:
+          type: string
+          minLength: 10
+          maxLength: 10000
+        tags:
+          type: array
+          items:
+            type: string
+            pattern: '^[a-z0-9-]+$'
+          maxItems: 10
+        status:
+          type: string
+          enum: [draft, published, archived]
+
+    Comment:
+      type: object
+      required:
+        - id
+        - post_id
+        - author
+        - content
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        post_id:
+          type: string
+          format: uuid
+        author:
+          type: string
+          minLength: 2
+          maxLength: 100
+          pattern: '^[a-zA-Z0-9_-]+$'
+        content:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        created_at:
+          type: string
+          format: date-time
+
+    CreateComment:
+      type: object
+      required:
+        - author
+        - content
+      properties:
+        author:
+          type: string
+          minLength: 2
+          maxLength: 100
+          pattern: '^[a-zA-Z0-9_-]+$'
+          example: "alice"
+        content:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "Great article! Thanks for sharing."
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details

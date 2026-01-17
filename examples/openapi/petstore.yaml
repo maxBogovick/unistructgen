@@ -1,0 +1,154 @@
+openapi: 3.0.0
+info:
+  title: Pet Store API
+  version: 1.0.0
+  description: A simple pet store API for demonstration
+  contact:
+    name: API Support
+    email: support@petstore.com
+  license:
+    name: MIT
+
+servers:
+  - url: https://api.petstore.com/v1
+    description: Production server
+
+paths:
+  /pets:
+    get:
+      summary: List all pets
+      operationId: listPets
+      tags:
+        - pets
+      parameters:
+        - name: limit
+          in: query
+          description: How many items to return
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: A paged array of pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+
+    post:
+      summary: Create a pet
+      operationId: createPet
+      tags:
+        - pets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPet'
+      responses:
+        '201':
+          description: Pet created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+
+  /pets/{petId}:
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+
+components:
+  schemas:
+    Pet:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the pet
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Name of the pet
+        tag:
+          type: string
+          description: Tag for categorizing the pet
+        status:
+          $ref: '#/components/schemas/PetStatus'
+        age:
+          type: integer
+          minimum: 0
+          maximum: 50
+          description: Age of the pet in years
+        breed:
+          type: string
+          description: Breed of the pet
+        vaccinated:
+          type: boolean
+          description: Whether the pet is vaccinated
+        adoptionDate:
+          type: string
+          format: date-time
+          description: Date when the pet was adopted
+
+    NewPet:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        tag:
+          type: string
+        breed:
+          type: string
+
+    PetStatus:
+      type: string
+      enum:
+        - available
+        - pending
+        - sold
+      description: Current status of the pet
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string

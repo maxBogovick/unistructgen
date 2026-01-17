@@ -1,0 +1,18 @@
+{
+  "transaction_id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+  "gateway_reference": "STRIPE_ch_3N5",
+  "amount": 2500.00,
+  "currency": "USD",
+  "status": "pending_capture",
+  "created_at": "2024-01-15T14:30:00Z",
+  "payer": {
+    "user_id": "u_123456",
+    "email": "customer@example.com",
+    "risk_score": 0.05
+  },
+  "metadata": {
+    "order_id": "ORD-998877",
+    "client_ip": "192.168.1.1"
+  },
+  "processing_fee": null
+}

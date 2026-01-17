@@ -2,9 +2,15 @@
 members = [
     "core",
     "parsers/json_parser",
+    "parsers/openapi_parser",
+    "parsers/markdown_parser",
     "codegen",
     "cli",
     "proc-macro",
+]
+exclude = [
+    "examples/github-client",
+    "examples/blog-api",
 ]
 resolver = "2"
 

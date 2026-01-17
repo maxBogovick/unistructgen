@@ -5,6 +5,9 @@ use std::path::PathBuf;
 use unistructgen_core::{Parser, CodeGenerator};
 use unistructgen_codegen::{RenderOptions, RustRenderer};
 use unistructgen_json_parser::{JsonParser, ParserOptions};
+use unistructgen_markdown_parser::{MarkdownParser, MarkdownParserOptions};
+
+mod client_gen;
 
 #[derive(ClapParser)]
 #[command(name = "unistructgen")]
@@ -48,6 +51,29 @@ enum Commands {
         #[arg(long, default_value = "false")]
         optional: bool,
     },
+
+    /// Generate a complete HTTP client from OpenAPI specification
+    Client {
+        /// Path to OpenAPI specification file (YAML or JSON)
+        #[arg(short, long)]
+        spec: Option<PathBuf>,
+
+        /// URL to fetch OpenAPI specification from
+        #[arg(short, long)]
+        url: Option<String>,
+
+        /// Output directory for generated client
+        #[arg(short, long, default_value = "./generated-client")]
+        output: PathBuf,
+
+        /// Name of the client (e.g., "GitHub", "Stripe")
+        #[arg(short, long, default_value = "Api")]
+        name: String,
+
+        /// Generate usage examples
+        #[arg(long, default_value = "true")]
+        examples: bool,
+    },
 }
 
 fn main() -> Result<()> {
@@ -64,6 +90,22 @@ fn main() -> Result<()> {
             optional,
         } => {
             generate_code(input, output, format, name, serde, default_derive, optional)?;
+        }
+        Commands::Client {
+            spec,
+            url,
+            output,
+            name,
+            examples,
+        } => {
+            let generator = client_gen::ClientGenerator {
+                spec_path: spec,
+                spec_url: url,
+                output_dir: output,
+                client_name: name,
+                include_examples: examples,
+            };
+            generator.generate()?;
         }
     }
 
@@ -108,7 +150,17 @@ fn generate_code(
                 .context("Failed to parse JSON input")?
         }
         "md" | "markdown" => {
-            anyhow::bail!("Markdown parsing is not yet implemented");
+            let parser_options = MarkdownParserOptions {
+                struct_name: name.clone(),
+                derive_serde,
+                derive_default,
+                make_fields_optional,
+            };
+            
+            let mut parser = MarkdownParser::new(parser_options);
+            parser
+                .parse(&input_content)
+                .context("Failed to parse Markdown input")?
         }
         "sql" => {
             anyhow::bail!("SQL parsing is not yet implemented");

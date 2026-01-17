@@ -22,25 +22,7 @@ const PRODUCT_SAMPLE: &str = r#"{
     "tags": ["electronics", "computers"]
 }"#;
 
-// Example 3: Nested structures
-generate_struct_from_json! {
-    name = "Company",
-    json = r#"{
-        "name": "Acme Corp",
-        "founded": 2020,
-        "address": {
-            "street": "123 Main St",
-            "city": "New York",
-            "zip": "10001"
-        },
-        "employees": [
-            {
-                "name": "John Doe",
-                "position": "Engineer"
-            }
-        ]
-    }"#
-}
+
 
 // Example 4: Optional fields
 generate_struct_from_json! {

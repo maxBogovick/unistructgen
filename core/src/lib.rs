@@ -71,6 +71,7 @@ pub mod transformer;
 pub mod pipeline;
 pub mod plugin;
 pub mod visitor;
+pub mod api;
 
 // Re-export main types and traits
 pub use ir::*;
@@ -81,3 +82,13 @@ pub use transformer::{IRTransformer, TransformError};
 pub use pipeline::{Pipeline, PipelineBuilder, PipelineError};
 pub use plugin::{Plugin, PluginRegistry, PluginError};
 pub use visitor::{IRVisitor, walk_module, walk_type, walk_struct, walk_field, walk_type_ref};
+
+// Re-export unified API for convenient access
+pub use api::{
+    StructGen, EnumGen, ModuleGen,
+    FieldBuilder, FieldType,
+    RenderOptions as ApiRenderOptions,
+    ApiResult, ApiError,
+    from_json, JsonGenBuilder,
+    render_module, render_module_with_options,
+};

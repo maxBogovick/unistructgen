@@ -1,0 +1,39 @@
+[workspace]
+members = ["server", "cli", "common"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["UniStructGen Contributors"]
+repository = "https://github.com/unistructgen/schema-registry"
+
+[workspace.dependencies]
+# Shared dependencies
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid"] }
+
+# Web framework
+axum = { version = "0.7", features = ["macros"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+colored = "2"
+indicatif = "0.17"
+
+# Serialization
+toml = "0.8"
+serde_yaml = "0.9"

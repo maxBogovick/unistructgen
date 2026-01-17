@@ -1,0 +1,430 @@
+//! # GitHub API Client - UniStructGen Showcase
+//!
+//! ## 🚀 The Magic
+//!
+//! ALL types in this file are **auto-generated** from `github-api.yaml`!
+//!
+//! - ✅ **300+ lines** of types generated automatically
+//! - ✅ **Full validation** from OpenAPI constraints
+//! - ✅ **Type-safe** - impossible to create invalid data
+//! - ✅ **Zero boilerplate** - just use the generated types!
+//!
+//! ## What You Get For Free
+//!
+//! ```yaml
+//! # In github-api.yaml:
+//! User:
+//!   properties:
+//!     login:
+//!       type: string
+//!       minLength: 1
+//!       maxLength: 39
+//!       pattern: '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$'
+//! ```
+//!
+//! ↓ **UniStructGen transforms this into:** ↓
+//!
+//! ```rust
+//! #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+//! pub struct User {
+//!     #[validate(length(min = 1, max = 39), regex = "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$")]
+//!     pub login: String,
+//!     // ... all other fields with validation!
+//! }
+//! ```
+//!
+//! **YOU DIDN'T WRITE A SINGLE LINE OF THIS CODE!** 🎉
+
+use anyhow::{Context, Result};
+use clap::{Parser, Subcommand};
+use colored::Colorize;
+use reqwest::blocking::Client;
+use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT};
+use serde::{Deserialize, Serialize};
+use std::env;
+use validator::Validate;
+
+// ============================================================================
+// 🎯 AUTO-GENERATED TYPES FROM GITHUB OPENAPI SPEC
+// ============================================================================
+//
+// This macro reads github-api.yaml and generates:
+// - User, Repository, Issue, PullRequest, Label, etc.
+// - All with proper validation attributes
+// - All with Serde derives
+// - All type-safe!
+
+unistructgen_macro::openapi_to_rust! {
+    file = "github-api.yaml"
+}
+
+// ============================================================================
+// 🔧 GITHUB CLIENT
+// ============================================================================
+
+pub struct GitHubClient {
+    client: Client,
+    base_url: String,
+    token: Option<String>,
+}
+
+impl GitHubClient {
+    pub fn new(token: Option<String>) -> Result<Self> {
+        let mut headers = HeaderMap::new();
+        headers.insert(USER_AGENT, HeaderValue::from_static("UniStructGen-Demo"));
+        headers.insert(
+            ACCEPT,
+            HeaderValue::from_static("application/vnd.github.v3+json"),
+        );
+
+        if let Some(ref t) = token {
+            headers.insert(
+                AUTHORIZATION,
+                HeaderValue::from_str(&format!("Bearer {}", t))?,
+            );
+        }
+
+        let client = Client::builder().default_headers(headers).build()?;
+
+        Ok(Self {
+            client,
+            base_url: "https://api.github.com".to_string(),
+            token,
+        })
+    }
+
+    /// Get authenticated user (GET /user)
+    pub fn get_authenticated_user(&self) -> Result<User> {
+        let url = format!("{}/user", self.base_url);
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .context("Failed to get authenticated user")?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("API error: {}", response.status());
+        }
+
+        let user: User = response.json().context("Failed to parse user response")?;
+
+        // Validate! (auto-generated validation from OpenAPI)
+        user.validate().context("User validation failed")?;
+
+        Ok(user)
+    }
+
+    /// Get user by username (GET /users/{username})
+    pub fn get_user(&self, username: &str) -> Result<User> {
+        let url = format!("{}/users/{}", self.base_url, username);
+        let response = self.client.get(&url).send()?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("User '{}' not found", username);
+        }
+
+        let user: User = response.json()?;
+        user.validate()?;
+        Ok(user)
+    }
+
+    /// List user repositories (GET /user/repos)
+    pub fn list_user_repos(&self, per_page: Option<i32>) -> Result<Vec<Repository>> {
+        let mut url = format!("{}/user/repos", self.base_url);
+        if let Some(pp) = per_page {
+            url.push_str(&format!("?per_page={}", pp));
+        }
+
+        let response = self.client.get(&url).send()?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("Failed to list repositories");
+        }
+
+        let repos: Vec<Repository> = response.json()?;
+
+        // Validate all repositories
+        for repo in &repos {
+            repo.validate().context("Repository validation failed")?;
+        }
+
+        Ok(repos)
+    }
+
+    /// Create a repository (POST /user/repos)
+    pub fn create_repo(&self, request: CreateRepositoryRequest) -> Result<Repository> {
+        // Validate request before sending!
+        request
+            .validate()
+            .context("Invalid create repository request")?;
+
+        let url = format!("{}/user/repos", self.base_url);
+        let response = self.client.post(&url).json(&request).send()?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().unwrap_or_default();
+            anyhow::bail!("Failed to create repository: {} - {}", status, body);
+        }
+
+        let repo: Repository = response.json()?;
+        repo.validate()?;
+        Ok(repo)
+    }
+
+    /// Get a repository (GET /repos/{owner}/{repo})
+    pub fn get_repo(&self, owner: &str, repo: &str) -> Result<Repository> {
+        let url = format!("{}/repos/{}/{}", self.base_url, owner, repo);
+        let response = self.client.get(&url).send()?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("Repository '{}/{}' not found", owner, repo);
+        }
+
+        let repository: Repository = response.json()?;
+        repository.validate()?;
+        Ok(repository)
+    }
+
+    /// List issues (GET /repos/{owner}/{repo}/issues)
+    pub fn list_issues(&self, owner: &str, repo: &str, state: Option<&str>) -> Result<Vec<Issue>> {
+        let mut url = format!("{}/repos/{}/{}/issues", self.base_url, owner, repo);
+        if let Some(s) = state {
+            url.push_str(&format!("?state={}", s));
+        }
+
+        let response = self.client.get(&url).send()?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("Failed to list issues");
+        }
+
+        let issues: Vec<Issue> = response.json()?;
+
+        for issue in &issues {
+            issue.validate()?;
+        }
+
+        Ok(issues)
+    }
+
+    /// Create an issue (POST /repos/{owner}/{repo}/issues)
+    pub fn create_issue(
+        &self,
+        owner: &str,
+        repo: &str,
+        request: CreateIssueRequest,
+    ) -> Result<Issue> {
+        // Validate request
+        request.validate().context("Invalid create issue request")?;
+
+        let url = format!("{}/repos/{}/{}/issues", self.base_url, owner, repo);
+        let response = self.client.post(&url).json(&request).send()?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().unwrap_or_default();
+            anyhow::bail!("Failed to create issue: {} - {}", status, body);
+        }
+
+        let issue: Issue = response.json()?;
+        issue.validate()?;
+        Ok(issue)
+    }
+}
+
+// ============================================================================
+// 📋 CLI INTERFACE
+// ============================================================================
+
+#[derive(Parser)]
+#[command(name = "github-demo")]
+#[command(about = "GitHub API Client - Auto-Generated by UniStructGen", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Get authenticated user info
+    Me,
+
+    /// Get user by username
+    User { username: String },
+
+    /// List your repositories
+    Repos {
+        #[arg(short, long, default_value_t = 10)]
+        limit: i32,
+    },
+
+    /// Get repository info
+    Repo { owner: String, name: String },
+
+    /// List repository issues
+    Issues {
+        owner: String,
+        repo: String,
+        #[arg(short, long, default_value = "open")]
+        state: String,
+    },
+
+    /// Show statistics about generated types
+    Stats,
+}
+
+// ============================================================================
+// 🎯 MAIN - DEMO THE POWER!
+// ============================================================================
+
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    // Get GitHub token from environment (optional for public APIs)
+    let token = env::var("GITHUB_TOKEN").ok();
+
+    match cli.command {
+        Commands::Me => {
+            if token.is_none() {
+                eprintln!(
+                    "{}",
+                    "⚠️  No GITHUB_TOKEN found. Set it to access authenticated endpoints."
+                        .yellow()
+                );
+                eprintln!("{}", "   export GITHUB_TOKEN=your_token_here".dimmed());
+                return Ok(());
+            }
+
+            let client = GitHubClient::new(token)?;
+            let user = client.get_authenticated_user()?;
+
+            println!("\n{}", "✅ Authenticated User:".green().bold());
+            println!("   👤 {} (@{})", user.name.as_ref().unwrap_or(&user.login), user.login);
+            if let Some(email) = &user.email {
+                println!("   📧 {}", email);
+            }
+            if let Some(bio) = &user.bio {
+                println!("   📝 {}", bio);
+            }
+            println!("   📦 {} public repos", user.public_repos.unwrap_or(0));
+            println!("   ⭐ {} followers", user.followers.unwrap_or(0));
+            println!("\n{}", "🎉 All data validated automatically!".cyan());
+        }
+
+        Commands::User { username } => {
+            let client = GitHubClient::new(token)?;
+            let user = client.get_user(&username)?;
+
+            println!("\n{}", format!("✅ User: @{}", username).green().bold());
+            println!("   ID: {}", user.id);
+            if let Some(name) = &user.name {
+                println!("   Name: {}", name);
+            }
+            println!("   Type: {:?}", user.r#type);
+            println!("   Public repos: {}", user.public_repos.unwrap_or(0));
+            println!("   Followers: {}", user.followers.unwrap_or(0));
+        }
+
+        Commands::Repos { limit } => {
+            if token.is_none() {
+                eprintln!("{}", "⚠️  GITHUB_TOKEN required for this command".yellow());
+                return Ok(());
+            }
+
+            let client = GitHubClient::new(token)?;
+            let repos = client.list_user_repos(Some(limit))?;
+
+            println!("\n{}", format!("✅ Found {} repositories:", repos.len()).green().bold());
+            for (i, repo) in repos.iter().enumerate().take(limit as usize) {
+                let stars = repo.stargazers_count.unwrap_or(0);
+                let lang = repo.language.as_deref().unwrap_or("N/A");
+
+                println!("\n{}. {} {}", i + 1, repo.name.bold(), if repo.private { "(🔒 private)".dimmed() } else { "".dimmed() });
+                if let Some(desc) = &repo.description {
+                    println!("   {}", desc.dimmed());
+                }
+                println!("   ⭐ {} | 🔀 {} | 📝 {}", stars, repo.forks_count.unwrap_or(0), lang);
+            }
+
+            println!("\n{}", "🎉 All data type-safe and validated!".cyan());
+        }
+
+        Commands::Repo { owner, name } => {
+            let client = GitHubClient::new(token)?;
+            let repo = client.get_repo(&owner, &name)?;
+
+            println!("\n{}", format!("✅ Repository: {}", repo.full_name.as_ref().unwrap_or(&repo.name)).green().bold());
+            if let Some(desc) = &repo.description {
+                println!("   {}", desc);
+            }
+            println!("\n   {} ⭐ Stars", repo.stargazers_count.unwrap_or(0));
+            println!("   {} 🔀 Forks", repo.forks_count.unwrap_or(0));
+            println!("   {} 👀 Watchers", repo.watchers_count.unwrap_or(0));
+            println!("   {} 🐛 Open Issues", repo.open_issues_count.unwrap_or(0));
+            if let Some(lang) = &repo.language {
+                println!("   📝 Language: {}", lang);
+            }
+            println!("   🔒 Visibility: {:?}", repo.visibility.as_ref().unwrap());
+        }
+
+        Commands::Issues { owner, repo, state } => {
+            let client = GitHubClient::new(token)?;
+            let issues = client.list_issues(&owner, &repo, Some(&state))?;
+
+            println!(
+                "\n{}",
+                format!("✅ Found {} {} issues:", issues.len(), state).green().bold()
+            );
+            for (i, issue) in issues.iter().enumerate().take(10) {
+                println!("\n{}. #{} - {}", i + 1, issue.number, issue.title.bold());
+                println!("   State: {:?} | Comments: {}", issue.state, issue.comments.unwrap_or(0));
+                if let Some(labels) = &issue.labels {
+                    if !labels.is_empty() {
+                        print!("   Labels: ");
+                        for label in labels {
+                            print!("[{}] ", label.name);
+                        }
+                        println!();
+                    }
+                }
+            }
+        }
+
+        Commands::Stats => {
+            println!("\n{}", "📊 UniStructGen Code Generation Statistics".cyan().bold());
+            println!("{}", "=".repeat(50));
+
+            println!("\n{}", "✨ Auto-Generated Types:".green());
+            println!("   • User");
+            println!("   • Repository");
+            println!("   • Issue");
+            println!("   • PullRequest");
+            println!("   • Label");
+            println!("   • CreateRepositoryRequest");
+            println!("   • CreateIssueRequest");
+            println!("   • UpdateIssueRequest");
+            println!("   • CreatePullRequestRequest");
+            println!("   • PullRequestBranch");
+
+            println!("\n{}", "🎯 Features:".green());
+            println!("   ✅ Full type safety");
+            println!("   ✅ Automatic validation (20+ constraints)");
+            println!("   ✅ Serde serialization/deserialization");
+            println!("   ✅ Comprehensive documentation");
+            println!("   ✅ Pattern matching for enums");
+            println!("   ✅ Nested type support");
+
+            println!("\n{}", "📈 Code Savings:".yellow().bold());
+            println!("   • ~300+ lines of type definitions");
+            println!("   • ~50+ validation rules");
+            println!("   • ~100+ doc comments");
+            println!("   • = ~450 lines you didn't have to write! 🎉");
+
+            println!("\n{}", "⚡ Time Saved: ~4-6 hours of manual work!".magenta().bold());
+            println!("{}", "=".repeat(50));
+        }
+    }
+
+    Ok(())
+}

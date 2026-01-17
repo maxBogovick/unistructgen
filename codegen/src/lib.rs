@@ -274,6 +274,12 @@ impl RustRenderer {
             writeln!(output, "    #[{}]", attr)?;
         }
 
+        // Generate validation attributes from constraints
+        let validation_attrs = self.generate_validation_attrs(&field.constraints);
+        if !validation_attrs.is_empty() {
+            writeln!(output, "    #[validate({})]", validation_attrs.join(", "))?;
+        }
+
         // Field definition
         writeln!(
             output,
@@ -283,6 +289,60 @@ impl RustRenderer {
         )?;
 
         Ok(())
+    }
+
+    /// Generate validation attributes from field constraints
+    fn generate_validation_attrs(&self, constraints: &unistructgen_core::FieldConstraints) -> Vec<String> {
+        let mut attrs = Vec::new();
+
+        // Length constraints (for strings and arrays)
+        if constraints.min_length.is_some() || constraints.max_length.is_some() {
+            let mut length_parts = Vec::new();
+            if let Some(min) = constraints.min_length {
+                length_parts.push(format!("min = {}", min));
+            }
+            if let Some(max) = constraints.max_length {
+                length_parts.push(format!("max = {}", max));
+            }
+            attrs.push(format!("length({})", length_parts.join(", ")));
+        }
+
+        // Numeric range constraints
+        if constraints.min_value.is_some() || constraints.max_value.is_some() {
+            let mut range_parts = Vec::new();
+            if let Some(min) = constraints.min_value {
+                // Handle both integer and float values
+                if min.fract() == 0.0 {
+                    range_parts.push(format!("min = {}", min as i64));
+                } else {
+                    range_parts.push(format!("min = {}", min));
+                }
+            }
+            if let Some(max) = constraints.max_value {
+                if max.fract() == 0.0 {
+                    range_parts.push(format!("max = {}", max as i64));
+                } else {
+                    range_parts.push(format!("max = {}", max));
+                }
+            }
+            attrs.push(format!("range({})", range_parts.join(", ")));
+        }
+
+        // Pattern/regex constraints
+        if let Some(pattern) = &constraints.pattern {
+            attrs.push(format!("regex = \"{}\"", pattern.replace('\"', "\\\"")));
+        }
+
+        // Email format
+        if let Some(format) = &constraints.format {
+            match format.as_str() {
+                "email" => attrs.push("email".to_string()),
+                "url" => attrs.push("url".to_string()),
+                _ => {} // Other formats not directly supported by validator crate
+            }
+        }
+
+        attrs
     }
 
     fn render_enum(&self, output: &mut String, ir_enum: &IREnum) -> Result<()> {
@@ -308,6 +368,10 @@ impl RustRenderer {
         for variant in &ir_enum.variants {
             if let Some(doc) = &variant.doc {
                 writeln!(output, "    /// {}", doc)?;
+            }
+            // Add serde(rename) if the variant name differs from source value
+            if let Some(source_value) = &variant.source_value {
+                writeln!(output, "    #[serde(rename = \"{}\")]", source_value)?;
             }
             writeln!(output, "    {},", variant.name)?;
         }

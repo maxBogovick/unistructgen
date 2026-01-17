@@ -19,6 +19,9 @@ path = "src/main.rs"
 [dependencies]
 unistructgen-core = { path = "../core" }
 unistructgen-json-parser = { path = "../parsers/json_parser" }
+unistructgen-openapi-parser = { path = "../parsers/openapi_parser" }
 unistructgen-codegen = { path = "../codegen" }
+unistructgen-markdown-parser = { path = "../parsers/markdown_parser" }
 anyhow.workspace = true
 clap = { version = "4.5", features = ["derive"] }
+validator = { version = "0.18", features = ["derive"] }
