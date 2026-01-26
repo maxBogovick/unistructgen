@@ -1,6 +1,8 @@
 mod builder;
+mod json_schema;
 
 pub use builder::RustRendererBuilder;
+pub use json_schema::{JsonSchemaRenderer, JsonSchemaError};
 
 use std::fmt::Write;
 use thiserror::Error;

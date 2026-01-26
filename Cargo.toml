@@ -7,6 +7,9 @@ members = [
     "codegen",
     "cli",
     "proc-macro",
+    "llm",
+    "examples/docu-agent",
+    "examples/tools-agent",
 ]
 exclude = [
     "examples/github-client",
@@ -25,7 +28,7 @@ homepage = "https://github.com/yourusername/unistructgen"
 documentation = "https://docs.rs/unistructgen"
 keywords = ["codegen", "json", "struct", "macro", "api"]
 categories = ["development-tools", "development-tools::build-utils", "parser-implementations"]
-readme = "README.md"
+readme = "README_OLD.md"
 
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }

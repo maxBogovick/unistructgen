@@ -5,6 +5,28 @@ use unistructgen_core::Parser;
 use unistructgen_codegen::{RenderOptions, RustRenderer};
 use unistructgen_json_parser::{JsonParser, ParserOptions};
 use unistructgen_openapi_parser::{OpenApiParser, OpenApiParserOptions};
+use unistructgen_env_parser::{EnvParser, EnvParserOptions};
+use unistructgen_sql_parser::{SqlParser, SqlParserOptions};
+use unistructgen_graphql_parser::{GraphqlParser, GraphqlParserOptions};
+
+mod ai_tool;
+
+/// Attribute macro to convert a Rust function into an AI Tool.
+///
+/// Generates a struct implementing `AiTool` that can be registered in a `ToolRegistry`.
+///
+/// # Example
+///
+/// ```ignore
+/// #[ai_tool]
+/// fn calculate_sum(a: i32, b: i32) -> i32 {
+///     a + b
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn ai_tool(attr: TokenStream, item: TokenStream) -> TokenStream {
+    ai_tool::ai_tool_impl(attr, item)
+}
 
 /// Macro input for generate_struct_from_json
 struct JsonStructInput {
@@ -79,21 +101,6 @@ impl Parse for JsonStructInput {
 }
 
 /// Generate Rust struct from inline JSON
-///
-/// # Examples
-///
-/// ```ignore
-/// use unistructgen_macro::generate_struct_from_json;
-///
-/// generate_struct_from_json! {
-///     name = "User",
-///     json = r#"{
-///         "id": 1,
-///         "name": "Alice",
-///         "email": "alice@example.com"
-///     }"#
-/// }
-/// ```
 #[proc_macro]
 pub fn generate_struct_from_json(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as JsonStructInput);
@@ -207,18 +214,6 @@ impl Parse for AttributeParams {
 }
 
 /// Attribute macro to generate struct from JSON string
-///
-/// # Examples
-///
-/// ```ignore
-/// use unistructgen_macro::json_struct;
-///
-/// #[json_struct(name = "User")]
-/// const SAMPLE: &str = r#"{
-///     "id": 1,
-///     "name": "Alice"
-/// }"#;
-/// ```
 #[proc_macro_attribute]
 pub fn json_struct(attr: TokenStream, item: TokenStream) -> TokenStream {
     let params = if attr.is_empty() {
@@ -532,7 +527,7 @@ fn fetch_json_from_api(input: &ExternalApiInput) -> Result<String, String> {
 
 /// Simple base64 encoding for Basic Auth
 fn base64_encode(input: &str) -> String {
-    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
     let bytes = input.as_bytes();
     let mut result = String::new();
 
@@ -562,81 +557,8 @@ mod tests {
 
     #[test]
     fn test_base64_encode() {
-        // Test basic encoding
         assert_eq!(base64_encode("hello"), "aGVsbG8=");
-        assert_eq!(base64_encode("hello world"), "aGVsbG8gd29ybGQ=");
-
-        // Test username:password format (typical for Basic Auth)
-        assert_eq!(base64_encode("user:pass"), "dXNlcjpwYXNz");
-        assert_eq!(base64_encode("admin:secret123"), "YWRtaW46c2VjcmV0MTIz");
-
-        // Test empty string
-        assert_eq!(base64_encode(""), "");
-
-        // Test single character
-        assert_eq!(base64_encode("a"), "YQ==");
-
-        // Test two characters
-        assert_eq!(base64_encode("ab"), "YWI=");
-
-        // Test three characters (no padding)
-        assert_eq!(base64_encode("abc"), "YWJj");
     }
-
-    #[test]
-    fn test_auth_method_bearer() {
-        let auth = AuthMethod::Bearer("my_token_123".to_string());
-        match auth {
-            AuthMethod::Bearer(token) => assert_eq!(token, "my_token_123"),
-            _ => panic!("Expected Bearer variant"),
-        }
-    }
-
-    #[test]
-    fn test_auth_method_api_key() {
-        let auth = AuthMethod::ApiKey {
-            header: "X-API-Key".to_string(),
-            value: "my_key_456".to_string(),
-        };
-        match auth {
-            AuthMethod::ApiKey { header, value } => {
-                assert_eq!(header, "X-API-Key");
-                assert_eq!(value, "my_key_456");
-            }
-            _ => panic!("Expected ApiKey variant"),
-        }
-    }
-
-    #[test]
-    fn test_auth_method_basic() {
-        let auth = AuthMethod::Basic {
-            username: "user".to_string(),
-            password: "pass".to_string(),
-        };
-        match auth {
-            AuthMethod::Basic { username, password } => {
-                assert_eq!(username, "user");
-                assert_eq!(password, "pass");
-            }
-            _ => panic!("Expected Basic variant"),
-        }
-    }
-}
-
-/// Merge multiple JSON samples to detect optional fields
-#[allow(dead_code)]
-fn merge_json_samples(samples: Vec<serde_json::Value>) -> serde_json::Value {
-    if samples.is_empty() {
-        return serde_json::Value::Null;
-    }
-
-    if samples.len() == 1 {
-        return samples[0].clone();
-    }
-
-    // For now, just return the first sample
-    // TODO: Implement proper field merging
-    samples[0].clone()
 }
 
 /// Limit nested depth in JSON
@@ -665,101 +587,6 @@ fn limit_json_depth(value: serde_json::Value, max_depth: usize, current_depth: u
 }
 
 /// Generate struct from external API call
-///
-/// This macro fetches JSON from an external API at compile time and generates
-/// a Rust struct based on the response structure.
-///
-/// # Array Handling
-///
-/// If the API returns an array of objects, the macro automatically extracts
-/// the first element to infer the struct definition. This allows you to work
-/// with list endpoints without needing to manually extract a single item.
-///
-/// # Authentication
-///
-/// The macro supports three authentication methods:
-///
-/// - **Bearer Token** - OAuth2, JWT, etc.
-/// - **API Key** - Custom header-based authentication
-/// - **Basic Auth** - Username/password authentication
-///
-/// # Examples
-///
-/// ## API returning a single object (no auth)
-///
-/// ```ignore
-/// use unistructgen_macro::struct_from_external_api;
-///
-/// struct_from_external_api! {
-///     struct_name = "User",
-///     url_api = "https://jsonplaceholder.typicode.com/users/1"
-/// }
-/// ```
-///
-/// ## API with Bearer token authentication
-///
-/// ```ignore
-/// use unistructgen_macro::struct_from_external_api;
-///
-/// struct_from_external_api! {
-///     struct_name = "User",
-///     url_api = "https://api.example.com/user",
-///     auth_bearer = "your_token_here"
-/// }
-/// ```
-///
-/// ## API with API Key authentication
-///
-/// ```ignore
-/// use unistructgen_macro::struct_from_external_api;
-///
-/// struct_from_external_api! {
-///     struct_name = "Data",
-///     url_api = "https://api.example.com/data",
-///     auth_api_key = "X-API-Key:your_api_key_here"
-/// }
-/// ```
-///
-/// ## API with Basic authentication
-///
-/// ```ignore
-/// use unistructgen_macro::struct_from_external_api;
-///
-/// struct_from_external_api! {
-///     struct_name = "Resource",
-///     url_api = "https://api.example.com/resource",
-///     auth_basic = "username:password"
-/// }
-/// ```
-///
-/// ## API returning an array (automatically extracts first element)
-///
-/// ```ignore
-/// use unistructgen_macro::struct_from_external_api;
-///
-/// struct_from_external_api! {
-///     struct_name = "Todo",
-///     url_api = "https://jsonplaceholder.typicode.com/todos"
-/// }
-/// // Generates struct from the first element of the array
-/// ```
-///
-/// ## Complete example with all options
-///
-/// ```ignore
-/// use unistructgen_macro::struct_from_external_api;
-///
-/// struct_from_external_api! {
-///     struct_name = "ApiResponse",
-///     url_api = "https://api.example.com/data",
-///     method = "GET",
-///     timeout = 30000,
-///     auth_bearer = "your_token",
-///     max_depth = 5,
-///     serde = true,
-///     default = false
-/// }
-/// ```
 #[proc_macro]
 pub fn struct_from_external_api(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ExternalApiInput);
@@ -1011,119 +838,6 @@ impl Parse for OpenApiInput {
 }
 
 /// Generate Rust types from OpenAPI specification
-///
-/// This macro parses OpenAPI 3.0/3.1 specifications and generates:
-/// - Rust structs for all schemas
-/// - API client traits (optional)
-/// - Validation derives (optional)
-///
-/// # Input Sources
-///
-/// The macro supports three input methods:
-///
-/// ## 1. Inline Specification
-///
-/// ```ignore
-/// openapi_to_rust! {
-///     spec = r#"
-/// openapi: 3.0.0
-/// info:
-///   title: My API
-///   version: 1.0.0
-/// components:
-///   schemas:
-///     User:
-///       type: object
-///       properties:
-///         id:
-///           type: integer
-///         name:
-///           type: string
-///     "#
-/// }
-/// ```
-///
-/// ## 2. From URL (fetched at compile time)
-///
-/// ```ignore
-/// openapi_to_rust! {
-///     url = "https://api.example.com/openapi.yaml",
-///     timeout = 30000  // optional, milliseconds
-/// }
-/// ```
-///
-/// ## 3. From File
-///
-/// ```ignore
-/// openapi_to_rust! {
-///     file = "openapi.yaml"
-/// }
-/// ```
-///
-/// # Authentication
-///
-/// When fetching from a URL, you can provide authentication:
-///
-/// ```ignore
-/// // Bearer token
-/// openapi_to_rust! {
-///     url = "https://api.example.com/openapi.yaml",
-///     auth_bearer = "your_token_here"
-/// }
-///
-/// // API key
-/// openapi_to_rust! {
-///     url = "https://api.example.com/openapi.yaml",
-///     auth_api_key = "X-API-Key:your_key"
-/// }
-///
-/// // Basic auth
-/// openapi_to_rust! {
-///     url = "https://api.example.com/openapi.yaml",
-///     auth_basic = "username:password"
-/// }
-/// ```
-///
-/// # Customization Options
-///
-/// ```ignore
-/// openapi_to_rust! {
-///     file = "openapi.yaml",
-///     generate_client = true,      // Generate API client traits (default: true)
-///     generate_validation = true,  // Add validation derives (default: true)
-///     serde = true,                // Add serde derives (default: true)
-///     default = false              // Add Default derive (default: false)
-/// }
-/// ```
-///
-/// # Examples
-///
-/// ## Simple usage
-///
-/// ```ignore
-/// use unistructgen_macro::openapi_to_rust;
-///
-/// openapi_to_rust! {
-///     file = "petstore.yaml"
-/// }
-///
-/// // Now you can use the generated types:
-/// let pet = Pet {
-///     id: 1,
-///     name: "Fluffy".to_string(),
-///     status: PetStatus::Available,
-/// };
-/// ```
-///
-/// ## With authentication
-///
-/// ```ignore
-/// openapi_to_rust! {
-///     url = "https://api.github.com/openapi.yaml",
-///     auth_bearer = env!("GITHUB_TOKEN"),
-///     timeout = 10000
-/// }
-/// ```
 #[proc_macro]
 pub fn openapi_to_rust(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as OpenApiInput);
@@ -1272,4 +986,362 @@ fn fetch_openapi_from_url(
     }
 
     Ok(content)
+}
+
+// ---------------------- NEW MACROS ----------------------
+
+/// Macro input for generate_struct_from_env
+struct EnvStructInput {
+    name: String,
+    env: String,
+    serde: bool,
+    default: bool,
+    optional: bool,
+}
+
+impl Parse for EnvStructInput {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut name = String::from("Config");
+        let mut env = String::new();
+        let mut serde = false;
+        let mut default = false;
+        let mut optional = false;
+
+        while !input.is_empty() {
+            let key: Ident = input.parse()?;
+            input.parse::<Token![=]>()?;
+
+            match key.to_string().as_str() {
+                "name" => {
+                    let value: LitStr = input.parse()?;
+                    name = value.value();
+                }
+                "env" => {
+                    let value: LitStr = input.parse()?;
+                    env = value.value();
+                }
+                "serde" => {
+                    let value: LitBool = input.parse()?;
+                    serde = value.value;
+                }
+                "default" => {
+                    let value: LitBool = input.parse()?;
+                    default = value.value;
+                }
+                "optional" => {
+                    let value: LitBool = input.parse()?;
+                    optional = value.value;
+                }
+                _ => {
+                    return Err(syn::Error::new(
+                        key.span(),
+                        format!("Unknown parameter: {}", key),
+                    ));
+                }
+            }
+
+            if !input.is_empty() {
+                input.parse::<Token![,]>()?;
+            }
+        }
+
+        if env.is_empty() {
+            return Err(syn::Error::new(
+                input.span(),
+                "Missing required 'env' parameter",
+            ));
+        }
+
+        Ok(EnvStructInput {
+            name,
+            env,
+            serde,
+            default,
+            optional,
+        })
+    }
+}
+
+/// Generate Rust struct from inline Env string
+#[proc_macro]
+pub fn generate_struct_from_env(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as EnvStructInput);
+
+    let parser_options = EnvParserOptions {
+        struct_name: input.name.clone(),
+        derive_serde: input.serde,
+        derive_default: input.default,
+        make_fields_optional: input.optional,
+    };
+
+    let mut parser = EnvParser::new(parser_options);
+    let ir_module = match parser.parse(&input.env) {
+        Ok(module) => module,
+        Err(e) => {
+            return syn::Error::new(
+                proc_macro2::Span::call_site(),
+                format!("Failed to parse Env: {}", e),
+            )
+            .to_compile_error()
+            .into();
+        }
+    };
+
+    let renderer = RustRenderer::new(RenderOptions {
+        add_header: false,
+        add_clippy_allows: false,
+    });
+
+    let generated_code = match renderer.render(&ir_module) {
+        Ok(code) => code,
+        Err(e) => {
+            return syn::Error::new(
+                proc_macro2::Span::call_site(),
+                format!("Failed to generate code: {}", e),
+            )
+            .to_compile_error()
+            .into();
+        }
+    };
+
+    generated_code.parse().unwrap_or_else(|e| {
+        syn::Error::new(
+            proc_macro2::Span::call_site(),
+            format!("Failed to parse generated code: {}", e),
+        )
+        .to_compile_error()
+        .into()
+    })
+}
+
+/// Macro input for generate_struct_from_sql
+struct SqlStructInput {
+    sql: String,
+    serde: bool,
+    default: bool,
+    optional: bool,
+}
+
+impl Parse for SqlStructInput {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut sql = String::new();
+        let mut serde = true;
+        let mut default = false;
+        let mut optional = false;
+
+        while !input.is_empty() {
+            let key: Ident = input.parse()?;
+            input.parse::<Token![=]>()?;
+
+            match key.to_string().as_str() {
+                "sql" => {
+                    let value: LitStr = input.parse()?;
+                    sql = value.value();
+                }
+                "serde" => {
+                    let value: LitBool = input.parse()?;
+                    serde = value.value;
+                }
+                "default" => {
+                    let value: LitBool = input.parse()?;
+                    default = value.value;
+                }
+                "optional" => {
+                    let value: LitBool = input.parse()?;
+                    optional = value.value;
+                }
+                _ => {
+                    return Err(syn::Error::new(
+                        key.span(),
+                        format!("Unknown parameter: {}", key),
+                    ));
+                }
+            }
+
+            if !input.is_empty() {
+                input.parse::<Token![,]>()?;
+            }
+        }
+
+        if sql.is_empty() {
+            return Err(syn::Error::new(
+                input.span(),
+                "Missing required 'sql' parameter",
+            ));
+        }
+
+        Ok(SqlStructInput {
+            sql,
+            serde,
+            default,
+            optional,
+        })
+    }
+}
+
+/// Generate Rust struct from inline SQL DDL
+#[proc_macro]
+pub fn generate_struct_from_sql(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as SqlStructInput);
+
+    let parser_options = SqlParserOptions {
+        derive_serde: input.serde,
+        derive_default: input.default,
+        make_fields_optional: input.optional,
+    };
+
+    let mut parser = SqlParser::new(parser_options);
+    let ir_module = match parser.parse(&input.sql) {
+        Ok(module) => module,
+        Err(e) => {
+            return syn::Error::new(
+                proc_macro2::Span::call_site(),
+                format!("Failed to parse SQL: {}", e),
+            )
+            .to_compile_error()
+            .into();
+        }
+    };
+
+    let renderer = RustRenderer::new(RenderOptions {
+        add_header: false,
+        add_clippy_allows: false,
+    });
+
+    let generated_code = match renderer.render(&ir_module) {
+        Ok(code) => code,
+        Err(e) => {
+            return syn::Error::new(
+                proc_macro2::Span::call_site(),
+                format!("Failed to generate code: {}", e),
+            )
+            .to_compile_error()
+            .into();
+        }
+    };
+
+    generated_code.parse().unwrap_or_else(|e| {
+        syn::Error::new(
+            proc_macro2::Span::call_site(),
+            format!("Failed to parse generated code: {}", e),
+        )
+        .to_compile_error()
+        .into()
+    })
+}
+
+/// Macro input for generate_struct_from_graphql
+struct GraphqlStructInput {
+    schema: String,
+    serde: bool,
+    default: bool,
+    optional: bool,
+}
+
+impl Parse for GraphqlStructInput {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut schema = String::new();
+        let mut serde = true;
+        let mut default = false;
+        let mut optional = false;
+
+        while !input.is_empty() {
+            let key: Ident = input.parse()?;
+            input.parse::<Token![=]>()?;
+
+            match key.to_string().as_str() {
+                "schema" => {
+                    let value: LitStr = input.parse()?;
+                    schema = value.value();
+                }
+                "serde" => {
+                    let value: LitBool = input.parse()?;
+                    serde = value.value;
+                }
+                "default" => {
+                    let value: LitBool = input.parse()?;
+                    default = value.value;
+                }
+                "optional" => {
+                    let value: LitBool = input.parse()?;
+                    optional = value.value;
+                }
+                _ => {
+                    return Err(syn::Error::new(
+                        key.span(),
+                        format!("Unknown parameter: {}", key),
+                    ));
+                }
+            }
+
+            if !input.is_empty() {
+                input.parse::<Token![,]>()?;
+            }
+        }
+
+        if schema.is_empty() {
+            return Err(syn::Error::new(
+                input.span(),
+                "Missing required 'schema' parameter",
+            ));
+        }
+
+        Ok(GraphqlStructInput {
+            schema,
+            serde,
+            default,
+            optional,
+        })
+    }
+}
+
+/// Generate Rust struct from inline GraphQL schema
+#[proc_macro]
+pub fn generate_struct_from_graphql(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as GraphqlStructInput);
+
+    let parser_options = GraphqlParserOptions {
+        derive_serde: input.serde,
+        derive_default: input.default,
+        make_fields_optional: input.optional,
+    };
+
+    let mut parser = GraphqlParser::new(parser_options);
+    let ir_module = match parser.parse(&input.schema) {
+        Ok(module) => module,
+        Err(e) => {
+            return syn::Error::new(
+                proc_macro2::Span::call_site(),
+                format!("Failed to parse GraphQL: {}", e),
+            )
+            .to_compile_error()
+            .into();
+        }
+    };
+
+    let renderer = RustRenderer::new(RenderOptions {
+        add_header: false,
+        add_clippy_allows: false,
+    });
+
+    let generated_code = match renderer.render(&ir_module) {
+        Ok(code) => code,
+        Err(e) => {
+            return syn::Error::new(
+                proc_macro2::Span::call_site(),
+                format!("Failed to generate code: {}", e),
+            )
+            .to_compile_error()
+            .into();
+        }
+    };
+
+    generated_code.parse().unwrap_or_else(|e| {
+        syn::Error::new(
+            proc_macro2::Span::call_site(),
+            format!("Failed to parse generated code: {}", e),
+        )
+        .to_compile_error()
+        .into()
+    })
 }

@@ -18,6 +18,9 @@ proc-macro = true
 unistructgen-core = { path = "../core" }
 unistructgen-json-parser = { path = "../parsers/json_parser" }
 unistructgen-openapi-parser = { path = "../parsers/openapi_parser" }
+unistructgen-env-parser = { path = "../parsers/env_parser" }
+unistructgen-sql-parser = { path = "../parsers/sql_parser" }
+unistructgen-graphql-parser = { path = "../parsers/graphql_parser" }
 unistructgen-codegen = { path = "../codegen" }
 syn = { version = "2.0", features = ["full", "extra-traits"] }
 quote = "1.0"
@@ -32,3 +35,4 @@ ureq = { version = "2.10", features = ["json"] }
 
 [dev-dependencies]
 validator = { version = "0.18", features = ["derive"] }
+chrono = { version = "0.4", features = ["serde"] }

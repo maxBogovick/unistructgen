@@ -8,6 +8,9 @@ use unistructgen_json_parser::{JsonParser, ParserOptions};
 use unistructgen_markdown_parser::{MarkdownParser, MarkdownParserOptions};
 
 mod client_gen;
+mod commands;
+
+use commands::fix::run_fix;
 
 #[derive(ClapParser)]
 #[command(name = "unistructgen")]
@@ -74,9 +77,13 @@ enum Commands {
         #[arg(long, default_value = "true")]
         examples: bool,
     },
+
+    /// (Experimental) Attempt to fix compilation errors using AI
+    Fix,
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
@@ -106,6 +113,9 @@ fn main() -> Result<()> {
                 include_examples: examples,
             };
             generator.generate()?;
+        }
+        Commands::Fix => {
+            run_fix().await?;
         }
     }
 

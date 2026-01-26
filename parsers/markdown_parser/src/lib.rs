@@ -1,3 +1,5 @@
+pub mod chunker;
+
 use pulldown_cmark::{Event, Parser as CmarkParser, Tag, Options as CmarkOptions};
 use thiserror::Error;
 use unistructgen_core::{

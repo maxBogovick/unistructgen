@@ -107,7 +107,7 @@ impl ClientGenerator {
 
         // Generate README
         let readme = self.generate_readme(&self.client_name);
-        let readme_path = self.output_dir.join("README.md");
+        let readme_path = self.output_dir.join("../../README_OLD.md");
         fs::write(&readme_path, readme)?;
         println!("✓ Generated: {}", readme_path.display());
 
@@ -124,9 +124,9 @@ impl ClientGenerator {
         Ok(())
     }
 
-    fn fetch_from_url(&self, url: &str) -> Result<String> {
-        // Simple HTTP fetch (in production, use reqwest or similar)
-        anyhow::bail!("URL fetching not yet implemented. Please download the spec file manually.");
+    fn fetch_from_url(&self, _url: &str) -> Result<String> {
+        // TODO: Implement URL fetching with ureq
+        Err(anyhow::anyhow!("URL fetching not implemented yet for client generator"))
     }
 
     fn generate_client_code(&self, client_name: &str) -> String {

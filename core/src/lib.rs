@@ -72,6 +72,10 @@ pub mod pipeline;
 pub mod plugin;
 pub mod visitor;
 pub mod api;
+pub mod validation;
+pub mod tools;
+pub mod diagnostics;
+pub mod patch;
 
 // Re-export main types and traits
 pub use ir::*;
@@ -82,6 +86,9 @@ pub use transformer::{IRTransformer, TransformError};
 pub use pipeline::{Pipeline, PipelineBuilder, PipelineError};
 pub use plugin::{Plugin, PluginRegistry, PluginError};
 pub use visitor::{IRVisitor, walk_module, walk_type, walk_struct, walk_field, walk_type_ref};
+pub use validation::*;
+pub use tools::{AiTool, ToolRegistry, ToolError, ToolResult};
+pub use async_trait::async_trait;
 
 // Re-export unified API for convenient access
 pub use api::{
