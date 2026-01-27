@@ -10,6 +10,7 @@ members = [
     "llm",
     "examples/docu-agent",
     "examples/tools-agent",
+    "examples/reverse-ir",
 ]
 exclude = [
     "examples/github-client",

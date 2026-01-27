@@ -169,10 +169,30 @@ fn render_enum(e: &IREnum) -> Result<Value, JsonSchemaError> {
 fn render_field(field: &IRField) -> Result<Value, JsonSchemaError> {
     let mut schema = render_type_ref(&field.ty)?;
     
-    // Add field-specific documentation if it's a simple type object
+    // Add field-specific documentation and constraints if it's a simple type object
     if let Some(obj) = schema.as_object_mut() {
         if let Some(doc) = &field.doc {
             obj.insert("description".to_string(), json!(doc));
+        }
+        
+        // Apply constraints
+        if let Some(min) = field.constraints.min_length {
+            obj.insert("minLength".to_string(), json!(min));
+        }
+        if let Some(max) = field.constraints.max_length {
+            obj.insert("maxLength".to_string(), json!(max));
+        }
+        if let Some(min) = field.constraints.min_value {
+            obj.insert("minimum".to_string(), json!(min));
+        }
+        if let Some(max) = field.constraints.max_value {
+            obj.insert("maximum".to_string(), json!(max));
+        }
+        if let Some(pattern) = &field.constraints.pattern {
+            obj.insert("pattern".to_string(), json!(pattern));
+        }
+        if let Some(format) = &field.constraints.format {
+            obj.insert("format".to_string(), json!(format));
         }
     }
 

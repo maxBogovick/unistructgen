@@ -274,6 +274,48 @@ let response = client.complete(CompletionRequest {
 
 ---
 
+## Core Feature: Reverse IR (Rust -> IR -> Schema)
+
+Define your types in Rust and generate the IR/Schema from them. This is the reverse of the standard flow, allowing you to use Rust as the Source of Truth.
+
+```rust
+use unistructgen_macro::IntoIR;
+use unistructgen_core::IntoIR;
+use unistructgen_codegen::JsonSchemaRenderer;
+
+#[derive(IntoIR)]
+struct User {
+    #[field(min_value = 1, doc = "Unique ID")]
+    id: i64,
+    
+    #[field(max_length = 100)]
+    name: String,
+    
+    #[field(format = "email", optional)]
+    email: Option<String>,
+}
+
+// Get the IR definition at runtime
+let definition = User::ir_definition().unwrap();
+
+// Wrap in a module
+let mut module = unistructgen_core::ir::IRModule::new("UserModule".to_string());
+module.add_type(definition);
+
+// Generate JSON Schema
+let schema = JsonSchemaRenderer::new().generate(&module)?;
+```
+
+Supported `#[field]` attributes:
+- `doc = "..."`: Overrides/adds documentation
+- `min_length`, `max_length`: String/array length constraints
+- `min_value`, `max_value`: Numeric range constraints
+- `pattern = "..."`: Regex pattern
+- `format = "..."`: Format string (e.g., "email", "date-time")
+- `optional`: Force optionality in IR
+
+---
+
 ## Core Feature: AI Validation Loop
 
 LLMs produce malformed JSON. UniStructGen provides structured validation errors and auto-generated correction prompts to send back to the LLM for self-healing.

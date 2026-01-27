@@ -10,6 +10,25 @@ use unistructgen_sql_parser::{SqlParser, SqlParserOptions};
 use unistructgen_graphql_parser::{GraphqlParser, GraphqlParserOptions};
 
 mod ai_tool;
+mod into_ir;
+
+/// Derive macro for `IntoIR` trait.
+///
+/// Allows generating UniStructGen IR from Rust structs.
+///
+/// # Example
+///
+/// ```ignore
+/// #[derive(IntoIR)]
+/// struct User {
+///     #[field(min_length = 5)]
+///     username: String,
+/// }
+/// ```
+#[proc_macro_derive(IntoIR, attributes(field))]
+pub fn derive_into_ir(input: TokenStream) -> TokenStream {
+    into_ir::impl_into_ir(input)
+}
 
 /// Attribute macro to convert a Rust function into an AI Tool.
 ///
@@ -35,6 +54,7 @@ struct JsonStructInput {
     serde: bool,
     default: bool,
     optional: bool,
+    reverse_ir: bool,
 }
 
 impl Parse for JsonStructInput {
@@ -44,6 +64,7 @@ impl Parse for JsonStructInput {
         let mut serde = true;
         let mut default = false;
         let mut optional = false;
+        let mut reverse_ir = false;
 
         while !input.is_empty() {
             let key: Ident = input.parse()?;
@@ -69,6 +90,10 @@ impl Parse for JsonStructInput {
                 "optional" => {
                     let value: LitBool = input.parse()?;
                     optional = value.value;
+                }
+                "reverse_ir" => {
+                    let value: LitBool = input.parse()?;
+                    reverse_ir = value.value;
                 }
                 _ => {
                     return Err(syn::Error::new(
@@ -96,6 +121,7 @@ impl Parse for JsonStructInput {
             serde,
             default,
             optional,
+            reverse_ir,
         })
     }
 }
@@ -114,7 +140,7 @@ pub fn generate_struct_from_json(input: TokenStream) -> TokenStream {
     };
 
     let mut parser = JsonParser::new(parser_options);
-    let ir_module = match parser.parse(&input.json) {
+    let mut ir_module = match parser.parse(&input.json) {
         Ok(module) => module,
         Err(e) => {
             return syn::Error::new(
@@ -125,6 +151,15 @@ pub fn generate_struct_from_json(input: TokenStream) -> TokenStream {
             .into();
         }
     };
+
+    // If reverse_ir is enabled, add IntoIR derive
+    if input.reverse_ir {
+        for ty in &mut ir_module.types {
+            if let unistructgen_core::IRType::Struct(s) = ty {
+                s.derives.push("IntoIR".to_string());
+            }
+        }
+    }
 
     // Generate Rust code
     let renderer = RustRenderer::new(RenderOptions {

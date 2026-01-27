@@ -77,9 +77,11 @@ pub mod tools;
 pub mod context;
 pub mod diagnostics;
 pub mod patch;
+pub mod into_ir;
 
 // Re-export main types and traits
 pub use ir::*;
+pub use into_ir::IntoIR;
 pub use error::*;
 pub use parser::{Parser, ParserExt, ParserMetadata, ParserResult};
 pub use codegen::{CodeGenerator, CodeGeneratorExt, GeneratorMetadata, CodegenResult, MultiGenerator};
