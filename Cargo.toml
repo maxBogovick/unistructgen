@@ -8,7 +8,9 @@ members = [
     "cli",
     "proc-macro",
     "llm",
+    "mcp",
     "examples/docu-agent",
+    "examples/mcp-server",
     "examples/tools-agent",
     "examples/reverse-ir",
 ]

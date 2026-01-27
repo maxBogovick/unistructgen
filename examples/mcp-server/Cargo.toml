@@ -1,0 +1,16 @@
+[package]
+name = "mcp-server"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+unistructgen-core = { path = "../../core" }
+unistructgen-macro = { path = "../../proc-macro" }
+unistructgen-mcp = { path = "../../mcp" }
+serde = "1.0"
+serde_json = "1.0"
+anyhow = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
