@@ -9,9 +9,11 @@ members = [
     "proc-macro",
     "llm",
     "mcp",
+    "agent",
     "examples/docu-agent",
     "examples/mcp-server",
     "examples/tools-agent",
+    "examples/agent-demo",
     "examples/reverse-ir",
 ]
 exclude = [
