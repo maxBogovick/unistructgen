@@ -1,0 +1,77 @@
+use anyhow::{Context, Result};
+use serde::Serialize;
+use unistructgen_proc_macro::struct_from_external_api;
+
+// Генерация структуры под GitHub releases/latest из реального API
+// optional = true → устойчивость к изменению полей
+
+struct_from_external_api! {
+    struct_name = "ReleaseResponse",
+    url_api = "https://api.github.com/repos/rust-lang/rust/releases/latest",
+    auth_bearer_env = "GITHUB_TOKEN",
+    env_file = ".env",
+    serde = true,
+    optional = true
+}
+
+#[derive(Debug, Serialize)]
+struct ReleaseReport {
+    repo: String,
+    tag: String,
+    title: String,
+    published_at: String,
+    url: String,
+    assets_total: usize,
+    downloads_total: i64,
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let owner = std::env::var("GITHUB_OWNER").unwrap_or_else(|_| "rust-lang".to_string());
+    let repo = std::env::var("GITHUB_REPO").unwrap_or_else(|_| "rust".to_string());
+    let token = std::env::var("GITHUB_TOKEN").ok();
+
+    let url = format!(
+        "https://api.github.com/repos/{}/{}/releases/latest",
+        owner, repo
+    );
+
+    let client = reqwest::Client::new();
+    let mut req = client
+        .get(&url)
+        .header("User-Agent", "unistructgen-demo")
+        .header("Accept", "application/vnd.github+json");
+
+    if let Some(token) = token {
+        req = req.header("Authorization", format!("Bearer {}", token));
+    }
+
+    let release: ReleaseResponse = req
+        .send()
+        .await
+        .context("GitHub API request failed")?
+        .json()
+        .await
+        .context("Failed to parse JSON")?;
+
+    let assets = release.assets.unwrap_or_default();
+    let downloads_total = assets
+        .iter()
+        .map(|a| a.download_count.unwrap_or(0))
+        .sum();
+
+    let report = ReleaseReport {
+        repo: format!("{}/{}", owner, repo),
+        tag: release.tag_name.unwrap_or_else(|| "unknown".to_string()),
+        title: release.name.unwrap_or_else(|| "(no title)".to_string()),
+        published_at: release.published_at.unwrap_or_else(|| "unknown".to_string()),
+        url: release.html_url.unwrap_or_else(|| url.clone()),
+        assets_total: assets.len(),
+        downloads_total,
+    };
+
+    std::fs::write("report.json", serde_json::to_string_pretty(&report)?)?;
+    println!("Report saved to report.json");
+
+    Ok(())
+}

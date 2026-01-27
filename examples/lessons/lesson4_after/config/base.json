@@ -1,0 +1,10 @@
+{
+  "app_name": "ConfigHub",
+  "log_level": "info",
+  "port": 8080,
+  "database_url": "postgres://localhost/confighub",
+  "max_connections": 20,
+  "timeout_ms": 1500,
+  "enable_metrics": false,
+  "features": ["auth", "audit"]
+}

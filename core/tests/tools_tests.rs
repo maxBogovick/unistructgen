@@ -1,4 +1,4 @@
-use unistructgen_core::{AiTool, ToolRegistry, ToolError, ToolResult};
+use unistructgen_core::{AiTool, ToolRegistry, ToolError, ToolResult, Context};
 use serde_json::json;
 use serde::Deserialize;
 use unistructgen_core::async_trait;
@@ -35,7 +35,7 @@ impl AiTool for CalculatorTool {
         })
     }
 
-    async fn call(&self, arguments_json: &str) -> ToolResult {
+    async fn call(&self, arguments_json: &str, _context: &Context) -> ToolResult {
         let args: CalculatorArgs = serde_json::from_str(arguments_json)?;
         match args.op.as_str() {
             "add" => Ok((args.a + args.b).to_string()),
@@ -49,6 +49,7 @@ impl AiTool for CalculatorTool {
 async fn test_tool_registry() {
     let mut registry = ToolRegistry::new();
     registry.register(CalculatorTool);
+    let context = Context::new();
 
     // 1. Check definitions
     let defs = registry.get_definitions();
@@ -56,14 +57,14 @@ async fn test_tool_registry() {
     assert_eq!(defs[0]["function"]["name"], "calculate");
 
     // 2. Execute successfully
-    let result = registry.execute("calculate", r#"{"a": 5, "b": 3, "op": "add"}"#).await;
+    let result = registry.execute("calculate", r#"{"a": 5, "b": 3, "op": "add"}"#, &context).await;
     assert_eq!(result.unwrap(), "8");
 
     // 3. Execute unknown tool
-    let result = registry.execute("unknown", "{}").await;
+    let result = registry.execute("unknown", "{}", &context).await;
     assert!(matches!(result, Err(ToolError::NotFound(_))));
 
     // 4. Execute with bad args
-    let result = registry.execute("calculate", r#"{"a": "bad"}"#).await;
+    let result = registry.execute("calculate", r#"{"a": "bad"}"#, &context).await;
     assert!(matches!(result, Err(ToolError::ArgumentError(_))));
 }

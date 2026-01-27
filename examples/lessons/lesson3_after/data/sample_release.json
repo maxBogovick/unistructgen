@@ -1,0 +1,16 @@
+{
+  "id": 123456789,
+  "tag_name": "v1.2.3",
+  "name": "Release 1.2.3",
+  "published_at": "2025-01-01T12:00:00Z",
+  "html_url": "https://github.com/owner/repo/releases/tag/v1.2.3",
+  "body": "Highlights and changes...",
+  "assets": [
+    {
+      "name": "app-macos.zip",
+      "size": 12457890,
+      "download_count": 1542,
+      "browser_download_url": "https://github.com/owner/repo/releases/download/v1.2.3/app-macos.zip"
+    }
+  ]
+}

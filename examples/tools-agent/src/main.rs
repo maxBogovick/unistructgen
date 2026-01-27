@@ -1,91 +1,64 @@
 use unistructgen_macro::ai_tool;
-use unistructgen_core::{ToolRegistry, AiTool};
+use unistructgen_core::{ToolRegistry, Context, tools::ToolCall};
+use unistructgen_llm::{LlmClientFactory, LlmClient};
 use colored::*;
-use std::time::Duration;
 
-/// Calculates the shipping cost based on weight and destination.
-#[ai_tool]
-fn calculate_shipping(weight_kg: f64, destination: String) -> f64 {
-    println!("  -> Executing calculate_shipping(weight={}, dest={})", weight_kg, destination);
-    
-    let base_rate = match destination.to_lowercase().as_str() {
-        "us" => 5.0,
-        "eu" => 10.0,
-        _ => 20.0,
-    };
-    
-    weight_kg * base_rate
+#[derive(Clone, Debug)]
+struct DbPool {
+    pub url: String,
 }
 
-/// Gets the current weather for a city asynchronously.
+/// A tool that requires a database pool from context.
 #[ai_tool]
-async fn get_weather(city: String) -> Result<String, String> {
-    println!("  -> Executing async get_weather(city={})", city);
-    // Simulate network delay
-    tokio::time::sleep(Duration::from_millis(500)).await;
-    
-    if city.to_lowercase() == "unknown" {
-        Err("City not found".to_string())
-    } else if city.to_lowercase() == "london" {
-        Ok("Rainy, 15°C".to_string())
-    } else {
-        Ok("Sunny, 25°C".to_string())
-    }
+async fn get_user_balance(#[context] db: DbPool, user_id: i32) -> Result<f64, String> {
+    println!("  -> [DB] Querying balance for user {} on {}", user_id, db.url);
+    Ok(1250.50) 
+}
+
+/// A simple calculator tool.
+#[ai_tool]
+fn add(a: i32, b: i32) -> i32 {
+    a + b
 }
 
 #[tokio::main]
-async fn main() {
-    println!("{}", "=== UniStructGen AI Tools Agent Demo (Async) ===".bright_green().bold());
+async fn main() -> anyhow::Result<()> {
+    println!("{}", "=== UniStructGen Advanced Agency Demo ===".bright_green().bold());
 
-    // 1. Register Tools
-    println!("\n{}", "Step 1: Registering AI Tools...".yellow());
+    // 1. Setup Dependencies
+    let mut context = Context::new();
+    context.insert(DbPool { url: "bolt://localhost:7687".to_string() });
+
+    // 2. Register Tools
     let mut registry = ToolRegistry::new();
-    
-    registry.register(CalculateShippingTool);
-    registry.register(GetWeatherTool);
-    
-    println!("Tools registered: {}", "calculate_shipping, get_weather".cyan());
+    registry.register(GetUserBalanceTool);
+    registry.register(AddTool);
+    println!("Tools registered: {}", "get_user_balance, add".cyan());
 
-    // 2. Export Definitions (for LLM)
-    println!("\n{}", "Step 2: Exporting Tool Definitions (JSON Schema)...".yellow());
-    let definitions = registry.get_definitions();
-    // Compact output for brevity
-    println!("Definitions count: {}", definitions.len());
+    // 3. Demo: Batch Execution (Parallel)
+    println!("\n{}", "Step 1: Parallel Batch Tool Execution...".yellow());
+    let calls = vec![
+        ToolCall { name: "get_user_balance".into(), arguments: r#"{"user_id": 1}"#.into() },
+        ToolCall { name: "add".into(), arguments: r#"{"a": 10, "b": 20}"#.into() },
+    ];
 
-    // 3. Simulate LLM Tool Execution
-    println!("\n{}", "Step 3: Simulating Async Execution...".yellow());
-    
-    // Scenario 1: Sync Tool (via Async Wrapper)
-    println!("\nAgent: Calculate shipping to US.");
-    let tool_name = "calculate_shipping";
-    let args_json = r#"{ "weight_kg": 5.5, "destination": "US" }"#;
-    
-    println!("Calling tool: {} with args: {}", tool_name.cyan(), args_json.blue());
-    match registry.execute(tool_name, args_json).await {
-        Ok(result) => println!("Result: {}", result.green().bold()),
-        Err(e) => println!("Error: {}", e.to_string().red()),
+    let results = registry.execute_batch(calls, &context).await;
+    for (name, res) in results {
+        println!("Tool {}: {}", name.cyan(), format!("{:?}", res).green());
     }
 
-    // Scenario 2: Async Tool with Result::Ok
-    println!("\nAgent: Get weather in London.");
-    let tool_name = "get_weather";
-    let args_json = r#"{ "city": "London" }"#;
+    // 4. Demo: Streaming (Optional logic)
+    println!("\n{}", "Step 2: Streaming Completion (Conceptual)...".yellow());
+    println!("(Requires local Ollama or OpenAI key to run for real)");
     
-    println!("Calling tool: {} with args: {}", tool_name.cyan(), args_json.blue());
-    match registry.execute(tool_name, args_json).await {
-        Ok(result) => println!("Result: {}", result.green().bold()),
-        Err(e) => println!("Error: {}", e.to_string().red()),
+    // Attempt to create client using Factory
+    let client_result: unistructgen_llm::Result<Box<dyn LlmClient>> = LlmClientFactory::new().build();
+    if let Ok(client) = client_result {
+        println!("Client initialized: {}", client.model().cyan());
+    } else {
+        println!("Skipping real LLM call (no provider configured).");
     }
 
-    // Scenario 3: Async Tool with Result::Err
-    println!("\nAgent: Get weather in Unknown city.");
-    let tool_name = "get_weather";
-    let args_json = r#"{ "city": "Unknown" }"#;
-    
-    println!("Calling tool: {} with args: {}", tool_name.cyan(), args_json.blue());
-    match registry.execute(tool_name, args_json).await {
-        // If the tool returns Err("City not found"), our macro converts it to Err(ToolError::ExecutionError)
-        Ok(result) => println!("Result (Unexpected): {}", result.green().bold()),
-        Err(e) => println!("Error (Expected): {}", e.to_string().red()),
-    }
+    println!("\n{}", "Advanced Agency Demo Finished!".bright_green());
+    Ok(())
 }

@@ -3,8 +3,14 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
 
+use std::pin::Pin;
+use futures_util::Stream;
+
 pub mod ollama;
 pub mod openai;
+pub mod factory;
+
+pub use factory::{LlmClientFactory, Provider};
 
 #[derive(Debug, Error)]
 pub enum LlmError {
@@ -16,9 +22,12 @@ pub enum LlmError {
     Serialization(#[from] serde_json::Error),
     #[error("Configuration error: {0}")]
     Config(String),
+    #[error("Stream error: {0}")]
+    Stream(String),
 }
 
 pub type Result<T> = std::result::Result<T, LlmError>;
+pub type LlmStream = Pin<Box<dyn Stream<Item = Result<String>> + Send>>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -61,6 +70,9 @@ pub struct CompletionRequest {
 pub trait LlmClient: Send + Sync {
     /// Send a completion request to the LLM
     async fn complete(&self, request: CompletionRequest) -> Result<String>;
+
+    /// Send a completion request and receive a stream of response tokens
+    async fn complete_stream(&self, request: CompletionRequest) -> Result<LlmStream>;
     
     /// Get the model name currently in use
     fn model(&self) -> &str;

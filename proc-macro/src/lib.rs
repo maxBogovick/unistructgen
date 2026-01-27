@@ -328,6 +328,8 @@ struct ExternalApiInput {
     default: bool,
     optional: bool,
     auth: Option<AuthMethod>,
+    auth_bearer_env: Option<String>,
+    env_file: Option<String>,
 }
 
 #[derive(Clone)]
@@ -351,6 +353,8 @@ impl Parse for ExternalApiInput {
         let mut default = false;
         let mut optional = false;
         let mut auth = None;
+        let mut auth_bearer_env = None;
+        let mut env_file = None;
 
         while !input.is_empty() {
             let key: Ident = input.parse()?;
@@ -415,6 +419,14 @@ impl Parse for ExternalApiInput {
                     let value: LitStr = input.parse()?;
                     auth = Some(AuthMethod::Bearer(value.value()));
                 }
+                "auth_bearer_env" => {
+                    let value: LitStr = input.parse()?;
+                    auth_bearer_env = Some(value.value());
+                }
+                "env_file" => {
+                    let value: LitStr = input.parse()?;
+                    env_file = Some(value.value());
+                }
                 "auth_api_key" => {
                     let value: LitStr = input.parse()?;
                     let val_string = value.value();
@@ -478,8 +490,74 @@ impl Parse for ExternalApiInput {
             default,
             optional,
             auth,
+            auth_bearer_env,
+            env_file,
         })
     }
+}
+
+fn read_env_value_from_dotenv(
+    key: &str,
+    env_file: Option<&str>,
+    timeout_ms: u64,
+) -> Result<String, String> {
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
+        .map_err(|_| "CARGO_MANIFEST_DIR not set".to_string())?;
+
+    let (content, source_label) = match env_file {
+        Some(path) if path.starts_with("http://") || path.starts_with("https://") => {
+            let agent = ureq::AgentBuilder::new()
+                .timeout(std::time::Duration::from_millis(timeout_ms))
+                .build();
+            let response = agent
+                .get(path)
+                .call()
+                .map_err(|e| format!("Failed to fetch .env from {}: {}", path, e))?;
+            let body = response
+                .into_string()
+                .map_err(|e| format!("Failed to read .env response body from {}: {}", path, e))?;
+            (body, path.to_string())
+        }
+        Some(path) => {
+            let env_path = if std::path::Path::new(path).is_absolute() {
+                std::path::Path::new(path).to_path_buf()
+            } else {
+                std::path::Path::new(&manifest_dir).join(path)
+            };
+            let body = std::fs::read_to_string(&env_path)
+                .map_err(|e| format!("Failed to read .env at {}: {}", env_path.display(), e))?;
+            (body, env_path.display().to_string())
+        }
+        None => {
+            let env_path = std::path::Path::new(&manifest_dir).join(".env");
+            let body = std::fs::read_to_string(&env_path)
+                .map_err(|e| format!("Failed to read .env at {}: {}", env_path.display(), e))?;
+            (body, env_path.display().to_string())
+        }
+    };
+
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if let Some((k, v)) = line.split_once('=') {
+            let k = k.trim();
+            let mut v = v.trim().to_string();
+
+            if (v.starts_with('"') && v.ends_with('"')) || (v.starts_with('\'') && v.ends_with('\'')) {
+                if v.len() >= 2 {
+                    v = v[1..v.len() - 1].to_string();
+                }
+            }
+
+            if k == key {
+                return Ok(v);
+            }
+        }
+    }
+
+    Err(format!("Key '{}' not found in .env source {}", key, source_label))
 }
 
 /// Make HTTP request and fetch JSON
@@ -497,7 +575,19 @@ fn fetch_json_from_api(input: &ExternalApiInput) -> Result<String, String> {
     };
 
     // Apply authentication if provided
-    if let Some(auth) = &input.auth {
+    let mut auth = input.auth.clone();
+    if auth.is_none() {
+        if let Some(env_key) = &input.auth_bearer_env {
+            let token = read_env_value_from_dotenv(
+                env_key,
+                input.env_file.as_deref(),
+                input.timeout,
+            )?;
+            auth = Some(AuthMethod::Bearer(token));
+        }
+    }
+
+    if let Some(auth) = &auth {
         request = match auth {
             AuthMethod::Bearer(token) => {
                 request.set("Authorization", &format!("Bearer {}", token))

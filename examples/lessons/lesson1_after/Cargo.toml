@@ -1,0 +1,10 @@
+[package]
+name = "lesson1_after"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+unistructgen-core = { path = "../../core" }
+unistructgen-proc-macro = { package = "unistructgen-macro", path = "../../proc-macro" }
+anyhow = "1.0"
+tokio = { version = "1.0", features = ["full"] }

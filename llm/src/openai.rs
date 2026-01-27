@@ -1,8 +1,9 @@
-use crate::{LlmClient, CompletionRequest, Result, LlmError, Role};
+use crate::{LlmClient, CompletionRequest, Result, LlmError, Role, LlmStream};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde_json::json;
 use std::env;
+use futures_util::StreamExt;
 
 pub struct OpenAiClient {
     api_key: String,
@@ -28,13 +29,8 @@ impl OpenAiClient {
         self.base_url = url.into();
         self
     }
-}
 
-#[async_trait]
-impl LlmClient for OpenAiClient {
-    async fn complete(&self, request: CompletionRequest) -> Result<String> {
-        let url = format!("{}/chat/completions", self.base_url);
-
+    fn build_body(&self, request: CompletionRequest, stream: bool) -> serde_json::Value {
         let messages: Vec<serde_json::Value> = request.messages.iter()
             .map(|m| json!({
                 "role": match m.role {
@@ -49,6 +45,7 @@ impl LlmClient for OpenAiClient {
         let mut body = json!({
             "model": self.model,
             "messages": messages,
+            "stream": stream,
         });
 
         if let Some(temp) = request.temperature {
@@ -56,20 +53,25 @@ impl LlmClient for OpenAiClient {
         }
 
         if let Some(schema) = &request.response_schema {
-            // OpenAI Structured Outputs (2024-08-06)
-            // https://platform.openai.com/docs/guides/structured-outputs
             body.as_object_mut().unwrap().insert("response_format".to_string(), json!({
                 "type": "json_schema",
                 "json_schema": {
-                    "name": "response_schema", // Arbitrary name
+                    "name": "response_schema",
                     "strict": true,
                     "schema": schema
                 }
             }));
-        } else {
-            // Default to json_object if not strict schema but still generic JSON? 
-            // Or just text. For now, text.
         }
+
+        body
+    }
+}
+
+#[async_trait]
+impl LlmClient for OpenAiClient {
+    async fn complete(&self, request: CompletionRequest) -> Result<String> {
+        let url = format!("{}/chat/completions", self.base_url);
+        let body = self.build_body(request, false);
 
         let response = self.client.post(&url)
             .header("Authorization", format!("Bearer {}", self.api_key))
@@ -83,12 +85,52 @@ impl LlmClient for OpenAiClient {
         }
 
         let resp_json: serde_json::Value = response.json().await?;
-        
         let content = resp_json["choices"][0]["message"]["content"]
             .as_str()
             .ok_or_else(|| LlmError::Api("Empty response content from OpenAI".to_string()))?;
 
         Ok(content.to_string())
+    }
+
+    async fn complete_stream(&self, request: CompletionRequest) -> Result<LlmStream> {
+        let url = format!("{}/chat/completions", self.base_url);
+        let body = self.build_body(request, true);
+
+        let response = self.client.post(&url)
+            .header("Authorization", format!("Bearer {}", self.api_key))
+            .json(&body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await?;
+            return Err(LlmError::Api(format!("OpenAI error: {}", error_text)));
+        }
+
+        let stream = response.bytes_stream().map(|item| {
+            match item {
+                Ok(bytes) => {
+                    let text = String::from_utf8_lossy(&bytes);
+                    let mut tokens = Vec::new();
+                    for line in text.lines() {
+                        let line = line.trim();
+                        if line.is_empty() || line == "data: [DONE]" { continue; }
+                        
+                        if let Some(data) = line.strip_prefix("data: ") {
+                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(data) {
+                                if let Some(token) = val["choices"][0]["delta"]["content"].as_str() {
+                                    tokens.push(Ok(token.to_string()));
+                                }
+                            }
+                        }
+                    }
+                    futures_util::stream::iter(tokens)
+                }
+                Err(e) => futures_util::stream::iter(vec![Err(LlmError::Network(e))]),
+            }
+        }).flatten();
+
+        Ok(Box::pin(stream))
     }
 
     fn model(&self) -> &str {

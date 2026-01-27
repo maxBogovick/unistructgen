@@ -12,14 +12,14 @@ pub fn ai_tool_impl(_attr: TokenStream, item: TokenStream) -> TokenStream {
     // Check if function is async
     let is_async = input_fn.sig.asyncness.is_some();
     
-    // Check return type to see if it is a Result
+    // Check return type
     let is_result = if let ReturnType::Type(_, ty) = &input_fn.sig.output {
         is_result_type(ty)
     } else {
         false
     };
 
-    // 1. Extract Description from Doc Comments
+    // 1. Extract Description
     let mut description = String::new();
     for attr in &input_fn.attrs {
         if attr.path().is_ident("doc") {
@@ -38,29 +38,73 @@ pub fn ai_tool_impl(_attr: TokenStream, item: TokenStream) -> TokenStream {
         description = format!("Tool for {}", tool_name);
     }
 
-    // 2. Parse Arguments into IR for Schema Generation
+    // 2. Parse Arguments
     let mut ir_struct = IRStruct::new(format!("{}Args", tool_name));
-    let mut args_struct_fields = Vec::new(); // For generating the internal struct definition
-    let mut call_args = Vec::new(); // For calling the original function
+    let mut args_struct_fields = Vec::new(); 
+    let mut call_args = Vec::new();
+    let mut context_extractions = Vec::new();
 
     for input in &input_fn.sig.inputs {
         if let FnArg::Typed(pat_type) = input {
             let arg_name = if let Pat::Ident(pat_ident) = &*pat_type.pat {
                 pat_ident.ident.clone()
             } else {
-                continue; // Skip self or complex patterns
+                continue; 
             };
             
             let arg_name_str = arg_name.to_string();
             let ty = &*pat_type.ty;
-            
-            // Map syn::Type to IRTypeRef (Simplified mapping)
-            let ir_type = map_syn_type_to_ir(ty);
-            
-            ir_struct.add_field(IRField::new(arg_name_str.clone(), ir_type));
-            
-            args_struct_fields.push(quote! { pub #arg_name: #ty });
-            call_args.push(quote! { args.#arg_name });
+
+            // Check for #[context] attribute
+            // Note: attributes on function arguments are allowed in Rust but often unused.
+            // We use them as markers.
+            let is_context = pat_type.attrs.iter().any(|a| a.path().is_ident("context"));
+
+            if is_context {
+                // Dependency Injection logic
+                // The type 'ty' is likely a reference like &DbPool or just DbPool.
+                // Our Context stores Arc<dyn Any>, so we might need to handle cloning or references.
+                // Context::get<T>() returns Option<&T>.
+                
+                // Handling Reference Types vs Owned Types:
+                // If fn expects &T, we can pass reference from Context.
+                // If fn expects T, we must Clone it from Context reference.
+                
+                // Simplify: assume user asks for T and T is Clone + Send + Sync + 'static.
+                // Or user asks for Arc<T>.
+                
+                // For this macro implementation, let's assume we extract `T` via cloning.
+                // Code: let arg_name = context.require::<T>().map_err(...).cloned()?;
+                
+                // But wait, if ty is &T, we can't return reference to local variable easily in async call?
+                // Context is passed as reference. So we can return reference if lifetime allows.
+                // But `call` is async, so lifetimes are tricky.
+                // Safest bet: Clone.
+                
+                // We need to strip reference syntax from type for TypeId lookup if it is &T?
+                // Context stores T. `get` returns &T.
+                
+                // Let's rely on the user asking for `Type` (owned/cloned) for now to keep macro simple.
+                // Example: fn my_tool(#[context] db: DbPool) -> ... where DbPool is essentially Arc.
+                
+                context_extractions.push(quote! {
+                    let #arg_name = {
+                        let dep = context.require::<#ty>()
+                            .map_err(|e| unistructgen_core::ToolError::ContextError(e))?;
+                        dep.clone()
+                    };
+                });
+                
+                call_args.push(quote! { #arg_name });
+                
+            } else {
+                // Normal JSON Argument
+                let ir_type = map_syn_type_to_ir(ty);
+                ir_struct.add_field(IRField::new(arg_name_str.clone(), ir_type));
+                
+                args_struct_fields.push(quote! { pub #arg_name: #ty });
+                call_args.push(quote! { args.#arg_name });
+            }
         }
     }
 
@@ -75,7 +119,6 @@ pub fn ai_tool_impl(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let tool_struct_name = format_ident!("{}Tool", pascal_tool_name);
     let struct_name_ident = format_ident!("{}Args", tool_name); 
 
-    // Generate call logic
     let fn_call = if is_async {
         quote! { #fn_name(#(#call_args),*).await }
     } else {
@@ -95,9 +138,25 @@ pub fn ai_tool_impl(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
-    // Reconstruct the original function + Tool implementation
+    // Note: We need to filter out #[context] from the input function definition in the output?
+    // Rust compiler might complain about #[context] if it's not a registered attribute macro or helper.
+    // proc_macro_attribute usually consumes the item.
+    // We output `#input_fn` which contains the attributes.
+    // If we define `context` as a helper attribute, it might work?
+    // Actually, since we consume the function, we should ideally strip the `#[context]` attributes from the output function definition
+    // because `context` isn't a real attribute unless we define it.
+    // Simpler: Just define a dummy `#[context]` macro or ignore the warning if Rust allows unknown attributes on fn args (it usually errors).
+    
+    // Better strategy: Strip attributes from input_fn before quoting it back.
+    let mut output_fn = input_fn.clone();
+    for input in &mut output_fn.sig.inputs {
+        if let FnArg::Typed(pat_type) = input {
+            pat_type.attrs.retain(|a| !a.path().is_ident("context"));
+        }
+    }
+
     let output = quote! {
-        #input_fn
+        #output_fn
 
         #[allow(non_camel_case_types)]
         pub struct #tool_struct_name;
@@ -121,10 +180,15 @@ pub fn ai_tool_impl(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 serde_json::from_str(#schema_json_str).unwrap()
             }
 
-            async fn call(&self, arguments_json: &str) -> unistructgen_core::ToolResult {
+            async fn call(&self, arguments_json: &str, context: &unistructgen_core::Context) -> unistructgen_core::ToolResult {
+                // 1. Extract context dependencies
+                #(#context_extractions)*
+                
+                // 2. Parse JSON arguments
                 let args: #struct_name_ident = serde_json::from_str(arguments_json)
                     .map_err(unistructgen_core::ToolError::ArgumentError)?;
                 
+                // 3. Call function
                 let result = #fn_call;
                 #result_handling
             }

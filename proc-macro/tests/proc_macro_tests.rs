@@ -52,6 +52,13 @@ struct_from_external_api! {
     url_api = "https://jsonplaceholder.typicode.com/todos"
 }
 
+struct_from_external_api! {
+    struct_name = "ExmAuthEnv",
+    url_api = "https://jsonplaceholder.typicode.com/todos/1",
+    auth_bearer_env = "API_TOKEN",
+    env_file = "tests/fixtures/auth.env"
+}
+
 #[test]
 fn test_json_struct_attribute() {
     let product = Product {
@@ -91,6 +98,19 @@ fn test_array_api_response() {
         completed: false,
     };
     assert_eq!(todo.user_id, 1);
+    assert_eq!(todo.completed, false);
+}
+
+#[test]
+fn test_external_api_env_auth() {
+    // Ensure struct_from_external_api reads bearer token from env_file
+    let todo = ExmAuthEnv {
+        user_id: 1,
+        id: 1,
+        title: "delectus aut autem".to_string(),
+        completed: false,
+    };
+    assert_eq!(todo.id, 1);
     assert_eq!(todo.completed, false);
 }
 

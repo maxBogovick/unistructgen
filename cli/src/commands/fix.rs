@@ -5,9 +5,7 @@ use std::fs;
 use std::path::Path;
 use unistructgen_core::diagnostics::CargoDiagnostics;
 use unistructgen_core::patch::CodeFix;
-use unistructgen_llm::{LlmClient, CompletionRequest, Message};
-use unistructgen_llm::ollama::OllamaClient;
-use unistructgen_llm::openai::OpenAiClient;
+use unistructgen_llm::{LlmClient, CompletionRequest, Message, LlmClientFactory};
 use serde_json::json;
 
 pub async fn run_fix() -> Result<()> {
@@ -23,14 +21,13 @@ pub async fn run_fix() -> Result<()> {
 
     println!("Found {} errors. Analyzing...", errors.len().to_string().red());
 
-    // Initialize LLM (Prefer OpenAI for coding, fallback to Ollama)
-    let client: Box<dyn LlmClient> = if std::env::var("OPENAI_API_KEY").is_ok() {
-        println!("{}", "Using OpenAI (gpt-4o)...".cyan());
-        Box::new(OpenAiClient::new("gpt-4o")?)
-    } else {
-        println!("{}", "Using Ollama (llama3)...".cyan());
-        Box::new(OllamaClient::new("llama3"))
-    };
+    // Initialize LLM using Factory Pattern
+    // Auto-detects provider (OpenAI if key exists, else Ollama)
+    let client = LlmClientFactory::new()
+        .build()
+        .context("Failed to initialize LLM client")?;
+    
+    println!("Using LLM Provider: {}", client.model().cyan());
 
     for error in errors {
         println!("\n{}", "---------------------------------------------------".dimmed());
