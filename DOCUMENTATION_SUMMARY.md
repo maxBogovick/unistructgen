@@ -208,18 +208,11 @@ cat QUICKSTART.md
 cat FEATURES.md
 ```
 
-### 2. Update Links (5 min)
-Replace `yourusername` in:
-- README.md
-- CONTRIBUTING.md
-- DOCUMENTATION.md
-- Other badge URLs
+### 2. Update Links (done)
+All `yourusername` placeholders are replaced with `maxBogovick/unistructgen` across docs and badges.
 
-### 3. Add Repository URL
-Update these files with your actual GitHub URL:
-- README.md (badges and links)
-- CONTRIBUTING.md
-- DOCUMENTATION.md
+### 3. Add Repository URL (done)
+Repository links are aligned to `https://github.com/maxBogovick/unistructgen`.
 
 ### 4. Create GitHub Repository Assets
 

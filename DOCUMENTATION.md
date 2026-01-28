@@ -176,12 +176,12 @@ Become an expert:
 ### Official Links
 - 📦 [crates.io](https://crates.io/crates/unistructgen)
 - 📚 [docs.rs](https://docs.rs/unistructgen)
-- 🐙 [GitHub](https://github.com/yourusername/unistructgen)
+- 🐙 [GitHub](https://github.com/maxBogovick/unistructgen)
 
 ### Community
-- 💬 [Discussions](https://github.com/yourusername/unistructgen/discussions)
-- 🐛 [Issues](https://github.com/yourusername/unistructgen/issues)
-- 📢 [Releases](https://github.com/yourusername/unistructgen/releases)
+- 💬 [Discussions](https://github.com/maxBogovick/unistructgen/discussions)
+- 🐛 [Issues](https://github.com/maxBogovick/unistructgen/issues)
+- 📢 [Releases](https://github.com/maxBogovick/unistructgen/releases)
 
 ### Related
 - [Rust Book](https://doc.rust-lang.org/book/)
@@ -212,8 +212,8 @@ Become an expert:
 1. **Search Documentation** - Use Ctrl+F or search GitHub
 2. **Check Examples** - [EXAMPLES.md](EXAMPLES.md) has many patterns
 3. **Review FAQ** - Common questions in [README.md](README.md)
-4. **Ask Community** - [GitHub Discussions](https://github.com/yourusername/unistructgen/discussions)
-5. **Report Issue** - [GitHub Issues](https://github.com/yourusername/unistructgen/issues)
+4. **Ask Community** - [GitHub Discussions](https://github.com/maxBogovick/unistructgen/discussions)
+5. **Report Issue** - [GitHub Issues](https://github.com/maxBogovick/unistructgen/issues)
 
 ### Quick Answers
 
@@ -229,7 +229,7 @@ Found an error? Want to improve documentation?
 
 1. **Small fixes** - Click "Edit" on GitHub
 2. **Large changes** - Read [CONTRIBUTING.md](CONTRIBUTING.md)
-3. **New guides** - Propose in [Discussions](https://github.com/yourusername/unistructgen/discussions)
+3. **New guides** - Propose in [Discussions](https://github.com/maxBogovick/unistructgen/discussions)
 
 ## 📊 Documentation Stats
 

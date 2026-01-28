@@ -35,7 +35,7 @@ unistructgen client --spec api.yaml --output ./client
 ### 1. Install
 
 ```bash
-git clone https://github.com/your-repo/unistructgen
+git clone https://github.com/maxBogovick/unistructgen
 cd unistructgen
 cargo install --path ./cli
 ```
@@ -212,8 +212,7 @@ unistructgen generate --input data.json --name MyStruct
 unistructgen client \
   --spec api.yaml \
   --output ./client \
-  --name "MyAPI" \
-  --examples  # Generate usage examples
+  --name "MyAPI"
 ```
 
 ### What You Get
@@ -222,14 +221,13 @@ Every generated client includes:
 
 ```
 generated-client/
-├── Cargo.toml          # Ready-to-use dependencies
-├── src/
-│   ├── lib.rs         # Public API
-│   ├── types.rs       # All generated types
-│   └── client.rs      # HTTP client with methods
-├── examples/
-│   └── basic.rs       # Usage examples
-└── README.md          # Documentation
+├── Cargo.toml      # Ready-to-use dependencies
+├── lib.rs          # Public API
+├── types.rs        # All generated types
+├── client.rs       # HTTP client with methods
+├── README.md       # Documentation
+└── examples/
+    └── basic.rs    # Usage examples
 ```
 
 ## 🎓 How It Works
@@ -341,7 +339,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## 📖 Learn More
 
-- [Full Documentation](./README.md)
+- [Full Documentation](README.md)
 - [Real-World Examples](./examples/realworld-clients/SHOWCASE.md)
 - [API Reference](./docs/)
 - [OpenAPI Guide](./OPENAPI_GUIDE.md)
@@ -362,7 +360,7 @@ MIT OR Apache-2.0
 
 ```bash
 # Install
-git clone https://github.com/your-repo/unistructgen
+git clone https://github.com/maxBogovick/unistructgen
 cd unistructgen
 cargo install --path ./cli
 

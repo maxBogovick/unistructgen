@@ -4,6 +4,9 @@ members = [
     "parsers/json_parser",
     "parsers/openapi_parser",
     "parsers/markdown_parser",
+    "parsers/sql_parser",
+    "parsers/graphql_parser",
+    "parsers/env_parser",
     "codegen",
     "cli",
     "proc-macro",
@@ -28,12 +31,12 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = ["Maxim"]
 description = "A powerful Rust code generator that creates type-safe structs from JSON, Markdown tables, and SQL DDL"
-repository = "https://github.com/yourusername/unistructgen"
-homepage = "https://github.com/yourusername/unistructgen"
+repository = "https://github.com/maxBogovick/unistructgen"
+homepage = "https://github.com/maxBogovick/unistructgen"
 documentation = "https://docs.rs/unistructgen"
 keywords = ["codegen", "json", "struct", "macro", "api"]
 categories = ["development-tools", "development-tools::build-utils", "parser-implementations"]
-readme = "README_OLD.md"
+readme = "README.md"
 
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }

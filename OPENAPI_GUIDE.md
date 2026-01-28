@@ -618,7 +618,7 @@ match user.validate() {
 ## Support
 
 - **Documentation:** [docs.rs/unistructgen](https://docs.rs/unistructgen)
-- **Issues:** [GitHub Issues](https://github.com/yourusername/unistructgen/issues)
+- **Issues:** [GitHub Issues](https://github.com/maxBogovick/unistructgen/issues)
 - **Examples:** [examples/openapi/](./examples/openapi/)
 
 ---

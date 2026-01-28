@@ -35,7 +35,7 @@ unistructgen client \
     --spec jsonplaceholder.yaml \
     --output ./generated/jsonplaceholder-client \
     --name "JsonPlaceholder" \
-    --examples
+    --examples true
 
 echo ""
 echo -e "${GREEN}✨ Success! Your client is ready!${NC}"

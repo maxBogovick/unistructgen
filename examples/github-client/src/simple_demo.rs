@@ -8,7 +8,6 @@
 //! - ✅ **Type-safe** - impossible to create invalid data
 //! - ✅ **Zero boilerplate** - 3 lines of code → complete type system!
 
-use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 // ============================================================================

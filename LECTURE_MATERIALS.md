@@ -1277,9 +1277,9 @@ async fn main() {
 
 ## Ресурсы 📚
 
-- **GitHub:** https://github.com/yourusername/unistructgen
+- **GitHub:** https://github.com/maxBogovick/unistructgen
 - **Documentation:** https://docs.rs/unistructgen
-- **Examples:** https://github.com/yourusername/unistructgen/tree/main/examples
+- **Examples:** https://github.com/maxBogovick/unistructgen/tree/main/examples
 - **Crates.io:** https://crates.io/crates/unistructgen
 
 ---

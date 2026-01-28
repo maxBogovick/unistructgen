@@ -309,4 +309,4 @@ struct_from_external_api! {
 
 ---
 
-**Need help?** Open an issue on [GitHub](https://github.com/yourusername/unistructgen/issues)
+**Need help?** Open an issue on [GitHub](https://github.com/maxBogovick/unistructgen/issues)

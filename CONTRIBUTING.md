@@ -35,9 +35,9 @@ This project follows the [Rust Code of Conduct](https://www.rust-lang.org/polici
 
 ### Before You Start
 
-1. Check existing [issues](https://github.com/yourusername/unistructgen/issues)
-2. Check existing [pull requests](https://github.com/yourusername/unistructgen/pulls)
-3. Join our [discussions](https://github.com/yourusername/unistructgen/discussions)
+1. Check existing [issues](https://github.com/maxBogovick/unistructgen/issues)
+2. Check existing [pull requests](https://github.com/maxBogovick/unistructgen/pulls)
+3. Join our [discussions](https://github.com/maxBogovick/unistructgen/discussions)
 
 ---
 
@@ -54,7 +54,7 @@ This project follows the [Rust Code of Conduct](https://www.rust-lang.org/polici
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/unistructgen.git
+git clone https://github.com/maxBogovick/unistructgen.git
 cd unistructgen
 
 # Build all workspace members
@@ -295,7 +295,7 @@ git push origin feature/amazing-feature
 
 ### 4. Create Pull Request
 
-1. Go to the [repository](https://github.com/yourusername/unistructgen)
+1. Go to the [repository](https://github.com/maxBogovick/unistructgen)
 2. Click "New Pull Request"
 3. Select your branch
 4. Fill in the PR template:
@@ -541,8 +541,8 @@ We follow [Semantic Versioning](https://semver.org/):
 
 ## 💬 Getting Help
 
-- **Questions?** Use [GitHub Discussions](https://github.com/yourusername/unistructgen/discussions)
-- **Bugs?** Open an [Issue](https://github.com/yourusername/unistructgen/issues)
+- **Questions?** Use [GitHub Discussions](https://github.com/maxBogovick/unistructgen/discussions)
+- **Bugs?** Open an [Issue](https://github.com/maxBogovick/unistructgen/issues)
 - **Chat?** Join our Discord (coming soon)
 
 ---
@@ -560,7 +560,7 @@ Thank you for making UniStructGen better! 🎉
 
 <div align="center">
 
-**[⬅️ Back to README](README.md)** • **[📖 Documentation](QUICKSTART.md)** • **[💬 Discussions](https://github.com/yourusername/unistructgen/discussions)**
+**[⬅️ Back to README](README.md)** • **[📖 Documentation](QUICKSTART.md)** • **[💬 Discussions](https://github.com/maxBogovick/unistructgen/discussions)**
 
 Made with ❤️ by the community
 

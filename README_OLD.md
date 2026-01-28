@@ -7,7 +7,7 @@
 [![Crates.io](https://img.shields.io/crates/v/unistructgen?style=flat-square)](https://crates.io/crates/unistructgen)
 [![Documentation](https://img.shields.io/docsrs/unistructgen?style=flat-square)](https://docs.rs/unistructgen)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue?style=flat-square)](LICENSE)
-[![Build Status](https://img.shields.io/github/workflow/status/yourusername/unistructgen/CI?style=flat-square)](https://github.com/yourusername/unistructgen/actions)
+[![Build Status](https://img.shields.io/github/workflow/status/maxBogovick/unistructgen/CI?style=flat-square)](https://github.com/maxBogovick/unistructgen/actions)
 
 [Quick Start](#-quick-start) • [Examples](#-real-world-examples) • [Documentation](QUICKSTART.md) • [API Docs](https://docs.rs/unistructgen)
 
@@ -641,7 +641,7 @@ We welcome contributions! Here's how you can help:
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/unistructgen
+git clone https://github.com/maxBogovick/unistructgen
 cd unistructgen
 
 # Build
@@ -680,8 +680,9 @@ Special thanks to:
 
 <div align="center">
 
-**[⭐ Star us on GitHub](https://github.com/yourusername/unistructgen)** • **[📦 View on crates.io](https://crates.io/crates/unistructgen)** • **[💬 Join Discussions](https://github.com/yourusername/unistructgen/discussions)**
+**[⭐ Star us on GitHub](https://github.com/maxBogovick/unistructgen)** • **[📦 View on crates.io](https://crates.io/crates/unistructgen)** • **[💬 Join Discussions](https://github.com/maxBogovick/unistructgen/discussions)**
 
 Made with 🦀 by Rust developers, for Rust developers.
 
 </div>
+# NOTE: This README is archived. See README.md for the current documentation.

@@ -328,5 +328,5 @@ struct_from_external_api! {
 ## Need Help?
 
 - 📖 [Full Documentation](https://docs.rs/unistructgen)
-- 💬 [GitHub Discussions](https://github.com/yourusername/unistructgen/discussions)
-- 🐛 [Report Issues](https://github.com/yourusername/unistructgen/issues)
+- 💬 [GitHub Discussions](https://github.com/maxBogovick/unistructgen/discussions)
+- 🐛 [Report Issues](https://github.com/maxBogovick/unistructgen/issues)

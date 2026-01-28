@@ -6,6 +6,7 @@ use unistructgen_core::{Parser, CodeGenerator};
 use unistructgen_codegen::{RenderOptions, RustRenderer};
 use unistructgen_json_parser::{JsonParser, ParserOptions};
 use unistructgen_markdown_parser::{MarkdownParser, MarkdownParserOptions};
+use unistructgen_sql_parser::{SqlParser, SqlParserOptions};
 
 mod client_gen;
 mod commands;
@@ -74,7 +75,7 @@ enum Commands {
         name: String,
 
         /// Generate usage examples
-        #[arg(long, default_value = "true")]
+        #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
         examples: bool,
     },
 
@@ -173,7 +174,16 @@ fn generate_code(
                 .context("Failed to parse Markdown input")?
         }
         "sql" => {
-            anyhow::bail!("SQL parsing is not yet implemented");
+            let parser_options = SqlParserOptions {
+                derive_serde,
+                derive_default,
+                make_fields_optional,
+            };
+
+            let mut parser = SqlParser::new(parser_options);
+            parser
+                .parse(&input_content)
+                .context("Failed to parse SQL input")?
         }
         other => {
             anyhow::bail!("Unsupported format: {}", other);

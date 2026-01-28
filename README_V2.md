@@ -36,7 +36,7 @@ UniStructGen is a powerful, pipeline-based code generation engine designed to co
 cargo install --path cli
 
 # Or build from source
-git clone https://github.com/yourusername/unistructgen
+git clone https://github.com/maxBogovick/unistructgen
 cd unistructgen
 cargo build --release
 ```
@@ -82,7 +82,7 @@ unistructgen client \
   --spec examples/github-client/github-api.yaml \
   --output ./my-github-client \
   --name "GitHub" \
-  --examples
+  --examples true
 ```
 
 **What gets generated?**
@@ -201,3 +201,4 @@ This project is licensed under either of
 *   MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
 at your option.
+# NOTE: This README is archived. See README.md for the current documentation.

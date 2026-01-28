@@ -737,9 +737,9 @@ Try these projects:
 
 ### Join the Community
 
-- ⭐ [Star us on GitHub](https://github.com/yourusername/unistructgen)
-- 💬 [Join Discussions](https://github.com/yourusername/unistructgen/discussions)
-- 🐛 [Report Issues](https://github.com/yourusername/unistructgen/issues)
+- ⭐ [Star us on GitHub](https://github.com/maxBogovick/unistructgen)
+- 💬 [Join Discussions](https://github.com/maxBogovick/unistructgen/discussions)
+- 🐛 [Report Issues](https://github.com/maxBogovick/unistructgen/issues)
 - 📝 [Contribute](CONTRIBUTING.md)
 
 ---

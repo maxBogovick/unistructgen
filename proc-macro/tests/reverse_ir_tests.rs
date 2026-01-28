@@ -1,5 +1,5 @@
 use unistructgen_macro::{generate_struct_from_json, IntoIR};
-use unistructgen_core::{IntoIR, CodeGenerator};
+use unistructgen_core::CodeGenerator;
 use unistructgen_codegen::JsonSchemaRenderer;
 use unistructgen_core::ir::IRModule;
 use unistructgen_openapi_parser::{OpenApiParser, OpenApiParserOptions};
@@ -20,7 +20,7 @@ fn test_schema_to_rust_to_schema() {
     // It should implement IntoIR.
     
     // 2. Convert back to IR (Reverse IR)
-    let definition = UserReverse::ir_definition()
+    let definition = <UserReverse as unistructgen_core::IntoIR>::ir_definition()
         .expect("Failed to get IR definition from generated struct");
     
     // 3. Wrap in module
@@ -66,7 +66,8 @@ struct Product {
 #[test]
 fn test_rust_to_schema_to_rust() {
     // 1. Rust -> IR
-    let definition = Product::ir_definition().expect("Failed to get IR");
+    let definition = <Product as unistructgen_core::IntoIR>::ir_definition()
+        .expect("Failed to get IR");
     let mut module = IRModule::new("ProductModule".to_string());
     module.add_type(definition);
     

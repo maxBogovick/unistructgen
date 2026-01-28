@@ -1,33 +1,89 @@
-# UniStructGen Proc-Macro
+# 🔮 UniStructGen Proc Macros
 
-Procedural macros for generating Rust structs from JSON at compile time.
+**Compile-time генерация Rust-структур с нулевым runtime overhead**
 
-## Features
+[![Crate](https://img.shields.io/crates/v/unistructgen-macro.svg)](https://crates.io/crates/unistructgen-macro)
+[![Docs](https://docs.rs/unistructgen-macro/badge.svg)](https://docs.rs/unistructgen-macro)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](../LICENSE)
 
-- **Compile-time code generation**: Generate structs during compilation
-- **Two macro styles**: Function-like and attribute macros
-- **Type inference**: Automatic detection of DateTime, UUID, and other types
-- **Nested structures**: Full support for nested objects and arrays
-- **Serde integration**: Optional serde derives
+---
 
-## Installation
+## 📋 Содержание
 
-Add to your `Cargo.toml`:
+- [Обзор](#-обзор)
+- [Установка](#-установка)
+- [Макросы](#-макросы)
+- [generate_struct_from_json!](#-generate_struct_from_json)
+- [#[json_struct]](#-json_struct)
+- [struct_from_external_api!](#-struct_from_external_api)
+- [openapi_to_rust!](#-openapi_to_rust)
+- [Аутентификация](#-аутентификация)
+- [Type Inference](#-type-inference)
+- [Примеры](#-примеры)
+
+---
+
+## 🎯 Обзор
+
+`unistructgen-macro` предоставляет процедурные макросы для генерации Rust-кода во время компиляции:
+
+### Преимущества compile-time генерации
+
+| Аспект | Compile-time | Runtime |
+|--------|--------------|---------|
+| **Производительность** | Zero overhead | Parsing cost |
+| **Type Safety** | Полная проверка | Частичная |
+| **IDE Support** | Полный autocomplete | Ограниченный |
+| **Error Detection** | При компиляции | При выполнении |
+
+### Доступные макросы
+
+| Макрос | Источник | Описание |
+|--------|----------|----------|
+| `generate_struct_from_json!` | Inline JSON | Генерация из JSON строки |
+| `#[json_struct]` | Const string | Атрибут для const |
+| `struct_from_external_api!` | HTTP API | Загрузка JSON из API |
+| `openapi_to_rust!` | OpenAPI spec | Полная генерация из OpenAPI |
+
+---
+
+## 📦 Установка
 
 ```toml
 [dependencies]
 unistructgen-macro = "0.1"
+
+# Для работы с сгенерированным кодом
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+
+# Для специальных типов (опционально)
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["serde", "v4"] }
 ```
 
-## Usage
+---
 
-### Function-like Macro: `generate_struct_from_json!`
+## 🔧 generate_struct_from_json!
 
-Generate structs directly in your code:
+Генерирует Rust-структуры из inline JSON.
+
+### Синтаксис
+
+```rust
+generate_struct_from_json! {
+    name = "StructName",
+    json = r#"{ "field": "value" }"#,
+    // Опциональные параметры:
+    serde = true,      // Добавить serde derives (default: true)
+    default = false,   // Добавить Default derive (default: false)
+    optional = false,  // Все поля как Option<T> (default: false)
+}
+```
+
+### Примеры
+
+**Базовое использование:**
 
 ```rust
 use unistructgen_macro::generate_struct_from_json;
@@ -37,185 +93,339 @@ generate_struct_from_json! {
     json = r#"{
         "id": 1,
         "name": "Alice",
-        "email": "alice@example.com",
-        "created_at": "2024-01-15T10:30:00Z"
+        "email": "alice@example.com"
     }"#
 }
 
-// Now you can use the User struct
 fn main() {
-    let json = r#"{"id": 42, "name": "Bob", "email": "bob@example.com", "created_at": "2024-12-09T10:00:00Z"}"#;
-    let user: User = serde_json::from_str(json).unwrap();
-    println!("{:?}", user);
+    let user = User {
+        id: 42,
+        name: "Bob".to_string(),
+        email: "bob@example.com".to_string(),
+    };
+
+    let json = serde_json::to_string(&user).unwrap();
+    println!("{}", json);
 }
 ```
 
-### Attribute Macro: `#[json_struct]`
-
-Attach to a const string:
-
-```rust
-use unistructgen_macro::json_struct;
-
-#[json_struct(name = "Product")]
-const PRODUCT_SCHEMA: &str = r#"{
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "name": "Laptop",
-    "price": 999.99,
-    "in_stock": true
-}"#;
-
-fn main() {
-    let product: Product = serde_json::from_str(PRODUCT_SCHEMA).unwrap();
-    println!("{:?}", product);
-}
-```
-
-## Parameters
-
-Both macros support the following parameters:
-
-### `name` (required for `generate_struct_from_json!`, optional for `#[json_struct]`)
-
-The name of the root struct to generate.
+**С вложенными объектами:**
 
 ```rust
 generate_struct_from_json! {
-    name = "MyStruct",
-    json = r#"{"field": "value"}"#
+    name = "Order",
+    json = r#"{
+        "id": "ORD-001",
+        "customer": {
+            "name": "Alice",
+            "email": "alice@example.com"
+        },
+        "items": [
+            { "product": "Widget", "quantity": 2, "price": 29.99 }
+        ],
+        "total": 59.98
+    }"#
 }
+
+// Генерирует:
+// - Customer { name: String, email: String }
+// - ItemsItem { product: String, quantity: i64, price: f64 }
+// - Order { id: String, customer: Customer, items: Vec<ItemsItem>, total: f64 }
 ```
 
-### `json` (required for `generate_struct_from_json!`)
-
-The JSON sample as a string literal.
-
-### `serde` (optional, default: `true`)
-
-Whether to add Serialize and Deserialize derives.
-
-```rust
-generate_struct_from_json! {
-    name = "Plain",
-    serde = false,
-    json = r#"{"id": 1}"#
-}
-```
-
-### `default` (optional, default: `false`)
-
-Whether to add the Default derive.
-
-```rust
-generate_struct_from_json! {
-    name = "WithDefault",
-    default = true,
-    json = r#"{"count": 0}"#
-}
-```
-
-### `optional` (optional, default: `false`)
-
-Make all fields optional (wrapped in `Option<T>`).
+**С Default:**
 
 ```rust
 generate_struct_from_json! {
     name = "Config",
-    optional = true,
-    json = r#"{"host": "localhost", "port": 8080}"#
+    json = r#"{
+        "host": "localhost",
+        "port": 8080,
+        "debug": false
+    }"#,
+    default = true
 }
 
-// Generated struct will have:
-// pub struct Config {
-//     pub host: Option<String>,
-//     pub port: Option<i64>,
-// }
+let config = Config::default();
 ```
 
-## Examples
+---
 
-### Basic Usage
+## 🏷️ #[json_struct]
+
+Атрибут-макрос для генерации из const-строки.
+
+### Синтаксис
 
 ```rust
-use unistructgen_macro::generate_struct_from_json;
-
-generate_struct_from_json! {
-    name = "Person",
-    json = r#"{
-        "name": "Alice",
-        "age": 30,
-        "active": true
-    }"#
-}
-
-let person = Person {
-    name: "Bob".to_string(),
-    age: 25,
-    active: true,
-};
+#[json_struct(name = "StructName", serde = true, default = false)]
+const SAMPLE: &str = r#"{ "json": "data" }"#;
 ```
 
-### Nested Structures
+### Пример
 
 ```rust
-generate_struct_from_json! {
-    name = "Company",
-    json = r#"{
-        "name": "Acme Corp",
-        "address": {
-            "street": "123 Main St",
-            "city": "New York"
-        }
-    }"#
-}
+use unistructgen_macro::json_struct;
 
-// Generates both Company and Address structs
+#[json_struct(name = "Settings", default = true)]
+const SETTINGS_SAMPLE: &str = r#"{
+    "theme": "dark",
+    "font_size": 14,
+    "notifications": true
+}"#;
+
+fn main() {
+    let settings = Settings::default();
+    println!("Theme: {}", settings.theme);
+}
 ```
 
-### Arrays
+---
+
+## 🌐 struct_from_external_api!
+
+Загружает JSON из внешнего API во время компиляции.
+
+### Синтаксис
 
 ```rust
-generate_struct_from_json! {
-    name = "Blog",
-    json = r#"{
-        "title": "My Post",
-        "tags": ["rust", "programming"],
-        "comments": [
-            {"user": "Alice", "text": "Great!"}
-        ]
-    }"#
-}
+struct_from_external_api! {
+    struct_name = "StructName",
+    url_api = "https://api.example.com/data",
 
-// Generates Blog and CommentsItem structs
+    // HTTP настройки:
+    method = "GET",           // HTTP метод (default: "GET")
+    timeout = 30000,          // Таймаут в мс (default: 30000)
+
+    // Ограничения:
+    max_depth = 5,            // Максимальная глубина вложенности
+    max_entity_count = 100,   // Максимум элементов массива
+
+    // Генерация:
+    serde = true,
+    default = false,
+    optional = false,
+
+    // Аутентификация (один из):
+    auth_bearer = "token",
+    auth_api_key = "Header-Name:value",
+    auth_basic = "username:password",
+}
 ```
 
-### Special Type Detection
+### Примеры
+
+**Публичный API:**
 
 ```rust
-generate_struct_from_json! {
-    name = "Event",
-    json = r#"{
-        "id": "550e8400-e29b-41d4-a716-446655440000",
-        "timestamp": "2024-12-09T14:30:00Z",
-        "name": "Meeting"
-    }"#
+use unistructgen_macro::struct_from_external_api;
+
+struct_from_external_api! {
+    struct_name = "GitHubUser",
+    url_api = "https://api.github.com/users/octocat"
 }
 
-// Generates:
-// pub struct Event {
-//     pub id: uuid::Uuid,
-//     pub timestamp: chrono::DateTime<chrono::Utc>,
-//     pub name: String,
-// }
+// GitHubUser сгенерирован со всеми полями из ответа
 ```
 
-## Type Inference
+**API возвращающий массив:**
 
-The macro automatically infers appropriate Rust types:
+```rust
+struct_from_external_api! {
+    struct_name = "Todo",
+    url_api = "https://jsonplaceholder.typicode.com/todos"
+}
 
-| JSON Type | Detected Pattern | Rust Type |
-|-----------|------------------|-----------|
-| Number (integer) | - | `i64` or `u64` |
+// Макрос автоматически извлекает первый элемент массива
+// для определения структуры
+```
+
+**С аутентификацией:**
+
+```rust
+// Bearer Token
+struct_from_external_api! {
+    struct_name = "UserProfile",
+    url_api = "https://api.myservice.com/me",
+    auth_bearer = env!("API_TOKEN")
+}
+
+// API Key
+struct_from_external_api! {
+    struct_name = "WeatherData",
+    url_api = "https://api.weather.com/current",
+    auth_api_key = "X-API-Key:your_key"
+}
+
+// Basic Auth
+struct_from_external_api! {
+    struct_name = "PrivateData",
+    url_api = "https://internal.api.com/data",
+    auth_basic = "admin:secret"
+}
+```
+
+---
+
+## 📜 openapi_to_rust!
+
+Генерирует типы и клиент из OpenAPI спецификации.
+
+### Источники
+
+**Из файла:**
+
+```rust
+openapi_to_rust! {
+    file = "openapi.yaml"
+}
+```
+
+**Из URL:**
+
+```rust
+openapi_to_rust! {
+    url = "https://api.example.com/openapi.yaml",
+    timeout = 30000,
+    auth_bearer = env!("TOKEN")
+}
+```
+
+**Inline спецификация:**
+
+```rust
+openapi_to_rust! {
+    spec = r#"
+openapi: 3.0.0
+info:
+  title: My API
+  version: 1.0.0
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - email
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+    "#
+}
+```
+
+### Параметры
+
+```rust
+openapi_to_rust! {
+    // Источник (один из):
+    file = "spec.yaml",
+    url = "https://...",
+    spec = r#"..."#,
+
+    // Генерация:
+    generate_client = true,      // API клиент trait
+    generate_validation = true,  // #[validate(...)]
+    serde = true,
+    default = false,
+
+    // Для URL:
+    timeout = 30000,
+    auth_bearer = "token",
+    auth_api_key = "Header:value",
+    auth_basic = "user:pass",
+}
+```
+
+### Пример
+
+```rust
+use unistructgen_macro::openapi_to_rust;
+
+openapi_to_rust! {
+    file = "petstore.yaml",
+    generate_client = true,
+    generate_validation = true
+}
+
+fn main() {
+    let pet = Pet {
+        id: Some(1),
+        name: "Fluffy".to_string(),
+        status: Some(PetStatus::Available),
+    };
+
+    // Валидация
+    pet.validate().expect("Invalid pet");
+
+    // Сериализация
+    let json = serde_json::to_string(&pet).unwrap();
+}
+```
+
+---
+
+## 🔐 Аутентификация
+
+### Bearer Token
+
+```rust
+struct_from_external_api! {
+    struct_name = "Data",
+    url_api = "https://api.example.com/protected",
+    auth_bearer = "eyJhbGciOiJIUzI1NiIs..."
+}
+// Header: Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+```
+
+### API Key
+
+```rust
+struct_from_external_api! {
+    struct_name = "Data",
+    url_api = "https://api.example.com/data",
+    auth_api_key = "X-API-Key:sk_live_abc123"
+}
+// Header: X-API-Key: sk_live_abc123
+```
+
+### Basic Auth
+
+```rust
+struct_from_external_api! {
+    struct_name = "Data",
+    url_api = "https://api.example.com/secure",
+    auth_basic = "admin:password123"
+}
+// Header: Authorization: Basic YWRtaW46cGFzc3dvcmQxMjM=
+```
+
+### Переменные окружения
+
+```rust
+struct_from_external_api! {
+    struct_name = "Data",
+    url_api = "https://api.example.com/data",
+    auth_bearer = env!("MY_API_TOKEN")
+}
+
+// Перед компиляцией:
+// export MY_API_TOKEN="your_secret_token"
+```
+
+---
+
+## 🔍 Type Inference
+
+### Автоматическое определение типов
+
+| JSON | Pattern | Rust Type |
+|------|---------|-----------|
+| Number (int) | - | `i64` / `u64` |
 | Number (float) | - | `f64` |
 | String | ISO 8601 datetime | `chrono::DateTime<Utc>` |
 | String | UUID format | `uuid::Uuid` |
@@ -223,52 +433,92 @@ The macro automatically infers appropriate Rust types:
 | Boolean | - | `bool` |
 | Array | - | `Vec<T>` |
 | Object | - | Nested struct |
-| Null | - | `Option<T>` |
+| Null | - | `Option<serde_json::Value>` |
 
-## Field Name Sanitization
+### Санитизация имён полей
 
-Field names are automatically converted to Rust conventions:
+| Оригинал | Результат |
+|----------|-----------|
+| `camelCase` | `camel_case` + `#[serde(rename = "camelCase")]` |
+| `PascalCase` | `pascal_case` + rename |
+| `kebab-case` | `kebab_case` + rename |
+| `type` (keyword) | `type_` |
 
-- `camelCase` → `snake_case` with `#[serde(rename = "camelCase")]`
-- `PascalCase` → `snake_case` with rename attribute
-- `kebab-case` → `snake_case` with rename attribute
-- Rust keywords get `_` suffix
+---
 
-## Limitations
+## 📝 Примеры
 
-- JSON must be valid and parseable at compile time
-- Empty arrays default to `Vec<serde_json::Value>`
-- Heterogeneous arrays are not yet supported
-- Only JSON input is supported (no Markdown or SQL in proc-macros)
-
-## Comparison with CLI
-
-| Feature | Proc-Macro | CLI |
-|---------|-----------|-----|
-| When to use | Compile-time | Pre-generation |
-| Input sources | Inline JSON | Files (JSON, MD, SQL) |
-| Watch mode | ❌ | ✅ |
-| Multiple samples | ❌ | ✅ (planned) |
-| IDE integration | ✅ | Limited |
-
-## Error Messages
-
-The macro provides helpful error messages:
+### E-commerce
 
 ```rust
 generate_struct_from_json! {
-    name = "Test",
-    json = r#"invalid json"#
+    name = "Product",
+    json = r#"{
+        "id": "prod_123",
+        "name": "Wireless Headphones",
+        "price": 79.99,
+        "in_stock": true,
+        "categories": ["electronics", "audio"]
+    }"#
 }
-// Error: Failed to parse JSON: expected value at line 1 column 1
 ```
 
-## See Also
+### Configuration
 
-- [CLI Documentation](../cli/README.md)
-- [Examples](../examples/)
-- [Core Library](../core/)
+```rust
+#[json_struct(name = "AppConfig", default = true)]
+const CONFIG: &str = r#"{
+    "server": { "host": "0.0.0.0", "port": 8080 },
+    "database": { "url": "postgres://localhost/db" }
+}"#;
+```
 
-## License
+### External API
 
-MIT OR Apache-2.0
+```rust
+struct_from_external_api! {
+    struct_name = "WeatherForecast",
+    url_api = "https://api.weather.com/current?city=NYC",
+    auth_api_key = "X-API-Key:your_key"
+}
+```
+
+### OpenAPI Full
+
+```rust
+openapi_to_rust! {
+    file = "api-spec.yaml",
+    generate_client = true,
+    generate_validation = true
+}
+
+async fn example() -> Result<(), ApiError> {
+    let client = ApiClient::new("https://api.example.com");
+    let users = client.list_users(Some(10)).await?;
+    Ok(())
+}
+```
+
+---
+
+## ⚠️ Ограничения
+
+1. **Compile-time network** — `struct_from_external_api!` делает HTTP-запросы во время компиляции
+2. **Статические данные** — типы фиксированы на момент компиляции
+3. **Секреты** — используйте `env!()` для переменных окружения
+
+---
+
+## 🔗 Связанные модули
+
+- [unistructgen-core](../core/README.md) — IR, трейты, pipeline
+- [unistructgen-codegen](../codegen/README.md) — Rust генератор
+- [unistructgen-json-parser](../parsers/json_parser/README.md) — JSON парсер
+- [unistructgen-openapi-parser](../parsers/openapi_parser/README.md) — OpenAPI парсер
+- [unistructgen-cli](../cli/README.md) — CLI инструмент
+
+---
+
+## 📜 Лицензия
+
+MIT или Apache-2.0 — на ваш выбор.

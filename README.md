@@ -543,6 +543,51 @@ Supported transports:
 
 ---
 
+## Core Feature: Agent Runtime & Orchestration
+
+Build autonomous agents and pipelines directly in Rust. The runtime handles the ReAct loop (Reasoning + Acting), tool execution, and context management.
+
+```rust
+use unistructgen_agent::{Agent, AgentPipeline};
+use unistructgen_core::ToolRegistry;
+use unistructgen_macro::ai_tool;
+use std::sync::Arc;
+
+// 1. Define Tools
+#[ai_tool]
+fn search_web(query: String) -> String { /* ... */ }
+
+// 2. Build Agent
+let researcher = Agent::builder()
+    .name("Researcher")
+    .client(llm_client)
+    .tools(Arc::new(registry))
+    .system_prompt("You are a researcher. Use tools to find info.")
+    .build()?;
+
+// 3. Run (Auto-loop: Thought -> Action -> Observation -> Thought)
+let answer = researcher.run("What is the latest Rust version?").await?;
+```
+
+### Multi-Agent DAG Pipeline
+
+Chain agents together to solve complex tasks.
+
+```rust
+let pipeline = AgentPipeline::builder()
+    .agent("planner", planner_agent)
+    .agent("coder", coder_agent)
+    .agent("reviewer", reviewer_agent)
+    .start("planner")
+    .transition("planner", "coder")
+    .transition("coder", "reviewer")
+    .build()?;
+
+let result = pipeline.run("Create a snake game").await?;
+```
+
+---
+
 ## All 6 Parsers
 
 UniStructGen includes parsers for 6 input formats. Each implements the `Parser` trait and produces `IRModule`.
@@ -891,6 +936,12 @@ unistructgen/
 │       ├── server.rs        # Core MCP logic
 │       ├── stdio.rs         # Stdio transport
 │       └── sse.rs           # SSE transport (optional)
+│
+├── agent/                   # unistructgen-agent
+│   └── src/
+│       ├── lib.rs           # Agent & Pipeline exports
+│       ├── agent.rs         # ReAct loop implementation
+│       └── pipeline.rs      # DAG orchestration
 │
 ├── cli/                     # unistructgen-cli
 │   └── src/
