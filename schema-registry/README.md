@@ -1,23 +1,27 @@
-# Schema Registry - Enterprise Platform
+# Schema Registry (Experimental)
 
-> Централизованная платформа для управления API schemas с версионированием, валидацией, автогенерацией клиентов для множества языков и контролем доступа.
+> Экспериментальная подсистема для управления API‑схемами. Сейчас не интегрирована в основной pipeline UniStructGen.
 
-## 🌟 Возможности
+## ⚠️ Status & Limitations
 
-- ✅ **Schema Management**: Централизованное хранение и управление API спецификациями
-- ✅ **Version Control**: Полная история версий с changelog
-- ✅ **Breaking Change Detection**: Автоматическое обнаружение breaking changes
-- ✅ **Multi-Language Generation**: Генерация клиентов для Rust, TypeScript, Python, Go и других
-- ✅ **Team Management**: RBAC и управление командами
-- ✅ **REST API**: Полноценный HTTP API для интеграции
-- ✅ **CLI Tool**: Мощный command-line интерфейс
-- ✅ **Analytics**: Статистика использования и мониторинг
+- Не интегрирована в основной pipeline UniStructGen.
+- Генерация кода сейчас использует заглушку.
+- Часть заявленных функций находится в разработке.
+
+## 🌟 Возможности (план/частично)
+
+- 🟡 **Schema Management**: хранение и управление API‑спецификациями
+- 🟡 **Version Control**: история версий
+- 🟡 **Breaking Change Detection**: базовые диффы
+- 🟡 **Code Generation**: интеграция с UniStructGen (в работе)
+- 🔴 **Multi-Language Generation**: пока не реализовано
+- 🔴 **RBAC / Team Management**: пока не реализовано
 
 ## 📦 Компоненты
 
 ### Server
 
-HTTP API сервер на Axum с PostgreSQL бэкендом.
+HTTP API сервер на Axum с PostgreSQL бэкендом (функциональность частично).
 
 ```bash
 cd server
@@ -40,7 +44,7 @@ schema-registry --help
 
 Shared типы и утилиты.
 
-## 🚀 Быстрый старт
+## 🚀 Быстрый старт (для разработчиков)
 
 ### 1. Установка
 
@@ -48,9 +52,8 @@ Shared типы и утилиты.
 - Rust 1.70+
 - PostgreSQL 14+
 
-**Clone repository:**
+**В этом репозитории:**
 ```bash
-git clone https://github.com/unistructgen/schema-registry
 cd schema-registry
 ```
 
@@ -80,7 +83,7 @@ cd cli
 cargo install --path .
 ```
 
-### 5. Использование
+### 5. Использование (частично)
 
 ```bash
 # Проверка подключения
@@ -102,10 +105,10 @@ schema-registry get user-service
 # Сравнение версий
 schema-registry diff user-service --from 1.0.0 --to 2.0.0
 
-# Генерация кода
+# Генерация кода (пока заглушка)
 schema-registry generate user-service \
   --version 1.0.0 \
-  --targets rust,typescript \
+  --targets rust \
   --output ./generated
 ```
 

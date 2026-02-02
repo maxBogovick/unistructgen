@@ -416,9 +416,9 @@ unistructgen/
 │   ├── graphql_parser/   (unistructgen-graphql-parser)
 │   ├── markdown_parser/  (unistructgen-markdown-parser)
 │   └── env_parser/       (unistructgen-env-parser)
-├── proc-macro/           (unistructgen-proc-macro)
+├── proc-macro/           (unistructgen-macro)
 ├── llm/                  (unistructgen-llm)
-├── cli/                  (unistructgen-cli)
+├── cli/                  (unistructgen)
 └── examples/             (separate binary crates)
 ```
 

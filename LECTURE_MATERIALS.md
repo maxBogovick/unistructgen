@@ -693,7 +693,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install UniStructGen
-        run: cargo install unistructgen-cli
+        run: cargo install unistructgen
 
       - name: Generate types
         run: |
@@ -1169,7 +1169,7 @@ uuid = { version = "1.0", features = ["serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Установить CLI
-cargo install unistructgen-cli
+cargo install unistructgen
 ```
 
 ### Шаг 2: Первый пример (5 минут)

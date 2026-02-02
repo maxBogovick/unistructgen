@@ -1,21 +1,21 @@
 # 🚀 UniStructGen Real-World Showcase
 
-This directory demonstrates the **true power** of UniStructGen by generating production-ready HTTP clients for real APIs.
+This directory demonstrates UniStructGen by generating typed HTTP client scaffolds for real APIs.
 
 ## 🎯 What This Demonstrates
 
-UniStructGen can generate **complete, type-safe, production-ready HTTP clients** from OpenAPI specifications in seconds:
+UniStructGen can generate **type-safe client scaffolds** from OpenAPI specifications in seconds:
 
 - ✨ **Fully type-safe** - All types auto-generated from specs
-- 🔒 **Built-in validation** - Request/response validation included
-- 📝 **Auto-documented** - Complete documentation from OpenAPI
-- 🚀 **Ready to use** - Just add to your project
+- 🔒 **Built-in validation** - Constraints where possible
+- 📝 **Auto-documented** - Documentation from OpenAPI
+- 🚀 **Scaffold-ready** - Add to your project and extend
 - ⚡ **Fast** - Generate in seconds, not hours
 
 ## 📦 Included Examples
 
 ### 1. GitHub API Client
-**The complete GitHub REST API client in one command!**
+**The GitHub REST API client scaffold in one command!**
 
 ```bash
 # Generate the entire GitHub API client
@@ -103,7 +103,7 @@ unistructgen client --spec api.yaml --output ./client
 ```bash
 # Generate client whenever the spec changes
 unistructgen client \
-  --spec http://api.yourcompany.com/openapi.yaml \
+  --url http://api.yourcompany.com/openapi.yaml \
   --output ./internal-api-client \
   --name "InternalAPI"
 

@@ -39,7 +39,7 @@ fn test_markdown_parser_simple_table() {
             assert!(matches!(age_field.ty, IRTypeRef::Option(_)));
             assert!(age_field.optional);
         }
-        _ => panic!("Expected struct"),
+        _ => assert!(false, "Expected struct"),
     }
 }
 
@@ -64,7 +64,7 @@ fn test_markdown_parser_complex_types() {
             if let IRTypeRef::Vec(inner) = &tags.ty {
                 assert!(matches!(**inner, IRTypeRef::Primitive(PrimitiveKind::String)));
             } else {
-                panic!("Expected Vec<String>");
+                assert!(false, "Expected Vec<String>");
             }
 
             let scores = &s.fields[2];
@@ -72,9 +72,9 @@ fn test_markdown_parser_complex_types() {
              if let IRTypeRef::Vec(inner) = &scores.ty {
                 assert!(matches!(**inner, IRTypeRef::Primitive(PrimitiveKind::I32)));
             } else {
-                panic!("Expected Vec<i32>");
+                assert!(false, "Expected Vec<i32>");
             }
         }
-        _ => panic!("Expected struct"),
+        _ => assert!(false, "Expected struct"),
     }
 }

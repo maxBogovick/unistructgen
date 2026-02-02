@@ -7,6 +7,7 @@ Technical reference for the UniStructGen codebase. Covers every layer: IR design
 ## Table of Contents
 
 - [Design Philosophy](#design-philosophy)
+- [Scope & Stability](#scope--stability)
 - [System Overview](#system-overview)
 - [Intermediate Representation (IR)](#intermediate-representation-ir)
 - [Data Flow](#data-flow)
@@ -39,6 +40,13 @@ UniStructGen is built on four principles:
 3. **Compile-time first**: Proc macros generate structs at compile time with zero runtime cost. The pipeline API exists for runtime use cases, but the default path is compile-time.
 
 4. **AI-native**: The IR isn't just for code generation -- it generates JSON Schema for structured LLM outputs, powers the `#[ai_tool]` macro for function calling, and feeds validation loops for self-healing AI responses.
+
+---
+
+## Scope & Stability
+
+**Stable core:** `core/`, `codegen/`, `parsers/*`, `proc-macro/`, `cli/` are the primary developer-facing surface and should remain backward compatible within minor versions.
+**Experimental/optional:** `llm/`, `mcp/`, `agent/`, and `schema-registry/` are evolving and may change more frequently. Document any breaking changes explicitly in release notes.
 
 ---
 

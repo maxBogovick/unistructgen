@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 unistructgen-core = { path = "../../../core" }
-unistructgen-proc-macro = { package = "unistructgen-macro", path = "../../../proc-macro" }
+unistructgen-macro = { path = "../../../proc-macro" }
 anyhow = "1.0"

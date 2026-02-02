@@ -166,6 +166,15 @@ fn main() {
 
 ## Advanced Features
 
+### Compile-Time Fetch Controls
+
+For macros that fetch remote content at compile time (`struct_from_external_api!`, `openapi_to_rust!` with `url`, `env_file` over HTTP), you can control networking behavior:
+
+- `UNISTRUCTGEN_FETCH_OFFLINE=1` — disable network access (cache only)
+- `UNISTRUCTGEN_FETCH_CACHE=0` — disable caching
+- `UNISTRUCTGEN_FETCH_CACHE_DIR=/path` — custom cache directory
+- `UNISTRUCTGEN_FETCH_TIMEOUT_MS=60000` — override timeout (ms)
+
 ### Smart Type Inference
 
 UniStructGen automatically detects and converts special types:

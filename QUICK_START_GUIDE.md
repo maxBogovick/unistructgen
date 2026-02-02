@@ -1,5 +1,7 @@
 # Quick Start Guide - 5 Minutes to Your First Struct
 
+> Short version. For the full guide, see `QUICKSTART.md`.
+
 ## 1. Installation (30 seconds)
 
 ```toml

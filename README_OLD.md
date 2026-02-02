@@ -1,12 +1,14 @@
 # 🚀 UniStructGen
 
+> NOTE: This README is archived. See `README.md` for the current documentation.
+
 <div align="center">
 
 **Transform JSON into Type-Safe Rust Structs — At Compile Time**
 
 [![Crates.io](https://img.shields.io/crates/v/unistructgen?style=flat-square)](https://crates.io/crates/unistructgen)
 [![Documentation](https://img.shields.io/docsrs/unistructgen?style=flat-square)](https://docs.rs/unistructgen)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue?style=flat-square)](LICENSE-MIT)
 [![Build Status](https://img.shields.io/github/workflow/status/maxBogovick/unistructgen/CI?style=flat-square)](https://github.com/maxBogovick/unistructgen/actions)
 
 [Quick Start](#-quick-start) • [Examples](#-real-world-examples) • [Documentation](QUICKSTART.md) • [API Docs](https://docs.rs/unistructgen)

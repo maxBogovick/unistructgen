@@ -4,7 +4,7 @@
 
 [![Crate](https://img.shields.io/crates/v/unistructgen-macro.svg)](https://crates.io/crates/unistructgen-macro)
 [![Docs](https://docs.rs/unistructgen-macro/badge.svg)](https://docs.rs/unistructgen-macro)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](../LICENSE)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](../LICENSE-MIT)
 
 ---
 
@@ -18,6 +18,7 @@
 - [struct_from_external_api!](#-struct_from_external_api)
 - [openapi_to_rust!](#-openapi_to_rust)
 - [Аутентификация](#-аутентификация)
+- [Compile-time Fetch Controls](#-compile-time-fetch-controls)
 - [Type Inference](#-type-inference)
 - [Примеры](#-примеры)
 
@@ -419,6 +420,17 @@ struct_from_external_api! {
 
 ---
 
+## 🌐 Compile-time Fetch Controls
+
+Для макросов, которые обращаются к сети во время компиляции (`struct_from_external_api!`, `openapi_to_rust!` с `url`, `env_file` по HTTP), доступны переменные окружения:
+
+- `UNISTRUCTGEN_FETCH_OFFLINE=1` — запрет сети, только кеш
+- `UNISTRUCTGEN_FETCH_CACHE=0` — отключить кеш
+- `UNISTRUCTGEN_FETCH_CACHE_DIR=/path` — путь к кешу
+- `UNISTRUCTGEN_FETCH_TIMEOUT_MS=60000` — таймаут (мс)
+
+---
+
 ## 🔍 Type Inference
 
 ### Автоматическое определение типов
@@ -515,7 +527,7 @@ async fn example() -> Result<(), ApiError> {
 - [unistructgen-codegen](../codegen/README.md) — Rust генератор
 - [unistructgen-json-parser](../parsers/json_parser/README.md) — JSON парсер
 - [unistructgen-openapi-parser](../parsers/openapi_parser/README.md) — OpenAPI парсер
-- [unistructgen-cli](../cli/README.md) — CLI инструмент
+- [unistructgen](../cli/README.md) — CLI инструмент
 
 ---
 

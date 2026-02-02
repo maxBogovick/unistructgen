@@ -220,7 +220,7 @@ cargo test -p unistructgen-core api::tests::test_struct_gen_basic
 cargo build --release
 
 # CLI usage
-cargo run -p unistructgen-cli -- generate --input data.json --name MyStruct
+cargo run -p unistructgen -- generate --input data.json --name MyStruct
 ```
 
 ## Code Style

@@ -545,11 +545,10 @@ mod tests {
         let result = parser.parse(json).unwrap();
         assert_eq!(result.types.len(), 1);
 
+        assert!(matches!(&result.types[0], IRType::Struct(_)));
         if let IRType::Struct(s) = &result.types[0] {
             assert_eq!(s.name, "User");
             assert_eq!(s.fields.len(), 3);
-        } else {
-            panic!("Expected struct");
         }
     }
 

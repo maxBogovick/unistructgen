@@ -490,11 +490,10 @@ mod tests {
 
         let result = inference.infer(&value, "created_at").unwrap();
 
-        if let IRTypeRef::Primitive(PrimitiveKind::DateTime) = result {
-            // Success
-        } else {
-            panic!("Expected DateTime, got {:?}", result);
-        }
+        assert!(matches!(
+            result,
+            IRTypeRef::Primitive(PrimitiveKind::DateTime)
+        ));
     }
 
     #[test]
@@ -504,11 +503,7 @@ mod tests {
 
         let result = inference.infer(&value, "id").unwrap();
 
-        if let IRTypeRef::Primitive(PrimitiveKind::Uuid) = result {
-            // Success
-        } else {
-            panic!("Expected Uuid, got {:?}", result);
-        }
+        assert!(matches!(result, IRTypeRef::Primitive(PrimitiveKind::Uuid)));
     }
 
     #[test]
@@ -518,10 +513,9 @@ mod tests {
         let value = json!("user@example.com");
         let result = inference.infer(&value, "email").unwrap();
 
+        assert!(matches!(result, IRTypeRef::Named(_)));
         if let IRTypeRef::Named(name) = result {
             assert_eq!(name, "Email");
-        } else {
-            panic!("Expected Email type, got {:?}", result);
         }
     }
 
@@ -534,17 +528,15 @@ mod tests {
         if let IRTypeRef::Primitive(kind) = inference.infer(&int_value, "").unwrap() {
             assert!(matches!(kind, PrimitiveKind::I64 | PrimitiveKind::U64));
         } else {
-            panic!("Expected number type");
+            assert!(false, "Expected number type");
         }
 
         // Float
         let float_value = json!(3.14);
-        if let IRTypeRef::Primitive(PrimitiveKind::F64) = inference.infer(&float_value, "").unwrap()
-        {
-            // Success
-        } else {
-            panic!("Expected F64");
-        }
+        assert!(matches!(
+            inference.infer(&float_value, "").unwrap(),
+            IRTypeRef::Primitive(PrimitiveKind::F64)
+        ));
     }
 
     #[test]
@@ -555,13 +547,12 @@ mod tests {
         let result = inference.infer(&value, "").unwrap();
 
         if let IRTypeRef::Vec(inner) = result {
-            if let IRTypeRef::Primitive(PrimitiveKind::String) = *inner {
-                // Success
-            } else {
-                panic!("Expected Vec<String>, got Vec<{:?}>", inner);
-            }
+            assert!(matches!(
+                *inner,
+                IRTypeRef::Primitive(PrimitiveKind::String)
+            ));
         } else {
-            panic!("Expected Vec, got {:?}", result);
+            assert!(false, "Expected Vec");
         }
     }
 }

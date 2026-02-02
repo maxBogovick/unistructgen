@@ -536,21 +536,14 @@ fn read_env_value_from_dotenv(
     env_file: Option<&str>,
     timeout_ms: u64,
 ) -> Result<String, String> {
+    let timeout_ms = effective_timeout_ms(timeout_ms);
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
         .map_err(|_| "CARGO_MANIFEST_DIR not set".to_string())?;
 
     let (content, source_label) = match env_file {
         Some(path) if path.starts_with("http://") || path.starts_with("https://") => {
-            let agent = ureq::AgentBuilder::new()
-                .timeout(std::time::Duration::from_millis(timeout_ms))
-                .build();
-            let response = agent
-                .get(path)
-                .call()
+            let body = fetch_text_with_cache(path, "GET", timeout_ms, None)
                 .map_err(|e| format!("Failed to fetch .env from {}: {}", path, e))?;
-            let body = response
-                .into_string()
-                .map_err(|e| format!("Failed to read .env response body from {}: {}", path, e))?;
             (body, path.to_string())
         }
         Some(path) => {
@@ -597,8 +590,30 @@ fn read_env_value_from_dotenv(
 
 /// Make HTTP request and fetch JSON
 fn fetch_json_from_api(input: &ExternalApiInput) -> Result<String, String> {
+    let timeout_ms = effective_timeout_ms(input.timeout);
+
+    if input.method != "GET" {
+        return fetch_json_no_cache(input, timeout_ms);
+    }
+
+    let mut auth = input.auth.clone();
+    if auth.is_none() {
+        if let Some(env_key) = &input.auth_bearer_env {
+            let token = read_env_value_from_dotenv(
+                env_key,
+                input.env_file.as_deref(),
+                timeout_ms,
+            )?;
+            auth = Some(AuthMethod::Bearer(token));
+        }
+    }
+
+    fetch_text_with_cache(&input.url, "GET", timeout_ms, auth.as_ref())
+}
+
+fn fetch_json_no_cache(input: &ExternalApiInput, timeout_ms: u64) -> Result<String, String> {
     let agent = ureq::AgentBuilder::new()
-        .timeout(std::time::Duration::from_millis(input.timeout))
+        .timeout(std::time::Duration::from_millis(timeout_ms))
         .build();
 
     let mut request = match input.method.as_str() {
@@ -616,7 +631,7 @@ fn fetch_json_from_api(input: &ExternalApiInput) -> Result<String, String> {
             let token = read_env_value_from_dotenv(
                 env_key,
                 input.env_file.as_deref(),
-                input.timeout,
+                timeout_ms,
             )?;
             auth = Some(AuthMethod::Bearer(token));
         }
@@ -1079,13 +1094,69 @@ fn fetch_openapi_from_url(
     timeout_ms: u64,
     auth: Option<&AuthMethod>,
 ) -> Result<String, String> {
+    let timeout_ms = effective_timeout_ms(timeout_ms);
+    let content = fetch_text_with_cache(url, "GET", timeout_ms, auth)?;
+
+    if content.is_empty() {
+        return Err("Empty response from URL".to_string());
+    }
+
+    Ok(content)
+}
+
+fn effective_timeout_ms(default_timeout: u64) -> u64 {
+    std::env::var("UNISTRUCTGEN_FETCH_TIMEOUT_MS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .filter(|v| *v > 0)
+        .unwrap_or(default_timeout)
+}
+
+fn fetch_text_with_cache(
+    url: &str,
+    method: &str,
+    timeout_ms: u64,
+    auth: Option<&AuthMethod>,
+) -> Result<String, String> {
+    if let Some(cache_dir) = fetch_cache_dir()? {
+        let cache_path = cache_dir.join(cache_key(method, url));
+        if is_offline_mode() {
+            return read_cache(&cache_path).ok_or_else(|| {
+                format!(
+                    "Offline mode enabled and no cache found for {} {}",
+                    method, url
+                )
+            });
+        }
+        if let Some(cached) = read_cache(&cache_path) {
+            return Ok(cached);
+        }
+        let fetched = fetch_text_no_cache(url, timeout_ms, auth)?;
+        write_cache(&cache_path, &fetched)?;
+        return Ok(fetched);
+    }
+
+    if is_offline_mode() {
+        return Err(format!(
+            "Offline mode enabled but caching is disabled ({} {})",
+            method, url
+        ));
+    }
+
+    fetch_text_no_cache(url, timeout_ms, auth)
+}
+
+fn fetch_text_no_cache(
+    url: &str,
+    timeout_ms: u64,
+    auth: Option<&AuthMethod>,
+) -> Result<String, String> {
     let agent = ureq::AgentBuilder::new()
         .timeout(std::time::Duration::from_millis(timeout_ms))
         .build();
 
     let mut request = agent.get(url);
 
-    // Apply authentication if provided
     if let Some(auth_method) = auth {
         request = match auth_method {
             AuthMethod::Bearer(token) => request.set("Authorization", &format!("Bearer {}", token)),
@@ -1102,15 +1173,61 @@ fn fetch_openapi_from_url(
         .call()
         .map_err(|e| format!("HTTP request failed: {}", e))?;
 
-    let content = response
+    response
         .into_string()
-        .map_err(|e| format!("Failed to read response body: {}", e))?;
+        .map_err(|e| format!("Failed to read response body: {}", e))
+}
 
-    if content.is_empty() {
-        return Err("Empty response from URL".to_string());
+fn fetch_cache_dir() -> Result<Option<std::path::PathBuf>, String> {
+    if std::env::var("UNISTRUCTGEN_FETCH_CACHE")
+        .ok()
+        .map(|v| v == "0" || v.eq_ignore_ascii_case("false"))
+        .unwrap_or(false)
+    {
+        return Ok(None);
     }
 
-    Ok(content)
+    if let Ok(dir) = std::env::var("UNISTRUCTGEN_FETCH_CACHE_DIR") {
+        return Ok(Some(std::path::PathBuf::from(dir)));
+    }
+
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
+        .map_err(|_| "CARGO_MANIFEST_DIR not set".to_string())?;
+    Ok(Some(
+        std::path::Path::new(&manifest_dir)
+            .join("target")
+            .join("unistructgen_cache"),
+    ))
+}
+
+fn is_offline_mode() -> bool {
+    std::env::var("UNISTRUCTGEN_FETCH_OFFLINE")
+        .ok()
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
+fn cache_key(method: &str, url: &str) -> String {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    let mut hasher = DefaultHasher::new();
+    method.hash(&mut hasher);
+    url.hash(&mut hasher);
+    format!("{:x}.cache", hasher.finish())
+}
+
+fn read_cache(path: &std::path::Path) -> Option<String> {
+    std::fs::read_to_string(path).ok()
+}
+
+fn write_cache(path: &std::path::Path, content: &str) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create cache dir {}: {}", parent.display(), e))?;
+    }
+    std::fs::write(path, content)
+        .map_err(|e| format!("Failed to write cache file {}: {}", path.display(), e))
 }
 
 // ---------------------- NEW MACROS ----------------------

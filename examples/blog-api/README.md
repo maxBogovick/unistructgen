@@ -1,12 +1,12 @@
 # 🚀 Blog API - UniStructGen Showcase
 
-> **Демонстрация мощи UniStructGen**: одна OpenAPI спецификация превращается в полностью type-safe Rust API с автоматической валидацией!
+> **Демонстрация UniStructGen**: одна OpenAPI спецификация превращается в типизированные Rust‑типы и клиентский scaffold.
 
 ## ✨ Что это показывает?
 
-Этот пример демонстрирует **революционный подход** к созданию REST APIs в Rust:
+Этот пример демонстрирует практический подход к созданию REST APIs в Rust:
 
-### 1. **Одна спецификация = Весь код**
+### 1. **Одна спецификация = Типы + scaffold**
 
 ```yaml
 # blog-api.yaml - Единственный source of truth
@@ -48,9 +48,9 @@ pub struct Post {
 
 ```rust
 async fn create_post(
-    Json(create): Json<CreatePost>,  // ← Auto-validated!
+    Json(create): Json<CreatePost>,  // ← Validation attributes where possible
 ) -> Result<Json<Post>, ApiError> {
-    // Валидация уже прошла!
+    // Валидация выполняется на уровне ваших хендлеров/валидации.
     // Типы гарантированы компилятором!
     // Zero boilerplate!
 
@@ -64,9 +64,9 @@ async fn create_post(
 }
 ```
 
-### 3. **Автоматическая валидация**
+### 3. **Валидация (best-effort)**
 
-Все constraints из OpenAPI автоматически становятся Rust валидацией:
+Часть constraints из OpenAPI может быть преобразована в Rust‑валидацию:
 
 | OpenAPI | Rust (Auto-generated) |
 |---------|----------------------|
@@ -76,7 +76,7 @@ async fn create_post(
 | `maxItems: 10` | `#[validate(length(max = 10))]` |
 | `enum: [draft, published]` | `enum Status { Draft, Published }` |
 
-**Результат:** Невозможно создать невалидные данные на compile-time! 🎉
+**Результат:** Меньше ручного кода и больше автоматизации, но финальная валидация зависит от вашего пайплайна.
 
 ## 🎯 Возможности API
 

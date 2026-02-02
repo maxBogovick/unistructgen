@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use serde::Serialize;
-use unistructgen_proc_macro::struct_from_external_api;
+use unistructgen_macro::struct_from_external_api;
 
 // Генерация структуры под GitHub releases/latest из реального API
 // optional = true → устойчивость к изменению полей

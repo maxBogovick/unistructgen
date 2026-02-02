@@ -1,6 +1,8 @@
 # UniStructGen OpenAPI Parser
 
-Professional OpenAPI 3.0/3.1 parser for UniStructGen that generates type-safe Rust code from OpenAPI specifications.
+OpenAPI 3.0/3.1 parser for UniStructGen that generates type-safe Rust types from OpenAPI specifications.
+
+> Status: parsing and type generation are production-grade; client generation is a scaffold and may require manual adjustments for edge cases.
 
 ## Features
 
@@ -18,14 +20,13 @@ Professional OpenAPI 3.0/3.1 parser for UniStructGen that generates type-safe Ru
 - Array and map support
 - Optional field detection
 
-🔐 **API Client Generation**
-- Generate API client traits
-- Request/response types
-- Parameter extraction
-- Method signatures
+🔐 **API Client Generation (scaffold)**
+- Generate client traits and types
+- Basic parameter extraction
+- Method signatures (best-effort)
 
-✅ **Validation Support**
-- Integration with `validator` crate
+✅ **Validation Support (best-effort)**
+- Extracts validation metadata for downstream codegen
 - Min/max length constraints
 - Range validation
 - Format validation (email, URL, etc.)
@@ -40,9 +41,6 @@ Add to your `Cargo.toml`:
 unistructgen-openapi-parser = "0.1"
 unistructgen-core = "0.1"
 unistructgen-codegen = "0.1"
-
-# For validation support
-validator = { version = "0.16", features = ["derive"] }
 
 # For special types
 uuid = { version = "1.0", features = ["serde", "v4"] }
@@ -72,7 +70,7 @@ let spec = std::fs::read_to_string("openapi.yaml")?;
 let ir_module = parser.parse(&spec)?;
 
 // Generate Rust code
-let renderer = RustRenderer::default();
+    let renderer = RustRenderer::new(Default::default());
 let rust_code = renderer.generate(&ir_module)?;
 
 println!("{}", rust_code);

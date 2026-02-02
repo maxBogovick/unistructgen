@@ -1,5 +1,5 @@
 use anyhow::Result;
-use unistructgen_proc_macro::generate_struct_from_json;
+use unistructgen_macro::generate_struct_from_json;
 
 // UniStructGen сам генерирует структуру и serde‑rename
 // + можно делать все поля optional, если входные данные нестабильны

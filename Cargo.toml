@@ -18,6 +18,7 @@ members = [
     "examples/tools-agent",
     "examples/agent-demo",
     "examples/reverse-ir",
+    "examples/killer-example",
 ]
 exclude = [
     "examples/github-client",

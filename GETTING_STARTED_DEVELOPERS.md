@@ -2,7 +2,7 @@
 
 **Stop writing boilerplate. Start building.**
 
-UniStructGen is the fastest way to generate production-ready, type-safe Rust code from APIs, JSON, and schemas.
+UniStructGen generates type-safe Rust code from APIs, JSON, and schemas, with a focus on compile-time safety and a clean dev workflow.
 
 ## 🎯 Why UniStructGen?
 
@@ -19,22 +19,28 @@ You want to integrate an API. You have an OpenAPI spec. Now you face:
 ### The UniStructGen Solution
 
 ```bash
-# One command. 5 seconds. Complete type-safe client.
+# One command. Generate a typed client scaffold from OpenAPI.
 unistructgen client --spec api.yaml --output ./client
 ```
 
 - ✅ **Instant generation** - 5 seconds vs 8+ hours of manual work
-- ✅ **100% accurate** - Generated directly from spec
+- ✅ **Spec-driven** - Generated directly from spec
 - ✅ **Type-safe** - Compiler catches errors before runtime
-- ✅ **Auto-validated** - Built-in request/response validation
-- ✅ **Production-ready** - Use immediately in your project
+- ✅ **Auto-validated** - Built-in constraints where available
+- ✅ **Scaffold-ready** - Use immediately or extend as needed
 - ✅ **Always up-to-date** - Regenerate when API changes
 
 ## ⚡ Quick Start (60 Seconds)
 
+> Note: OpenAPI client generation is still evolving. It produces a strong typed scaffold, but you should review and extend it for your API’s edge cases.
+
 ### 1. Install
 
 ```bash
+# From crates.io
+cargo install unistructgen
+
+# Or from source
 git clone https://github.com/maxBogovick/unistructgen
 cd unistructgen
 cargo install --path ./cli
@@ -51,9 +57,9 @@ unistructgen client \
 ```
 
 **What just happened?**
-- Generated 100+ lines of type-safe Rust code
-- Created complete HTTP client with async/await
-- Added validation from OpenAPI constraints
+- Generated type-safe Rust types
+- Created a client scaffold with async/await helpers
+- Added validation from OpenAPI constraints where possible
 - Included usage examples
 - Created `Cargo.toml` with dependencies
 
@@ -102,7 +108,7 @@ Your team has an OpenAPI spec for your internal API:
 ```bash
 # Generate client from your API spec
 unistructgen client \
-  --spec http://internal-api.company.com/openapi.yaml \
+  --url http://internal-api.company.com/openapi.yaml \
   --output ./internal-client
 
 # Add to your service
@@ -128,9 +134,9 @@ unistructgen generate \
   --name User \
   --output user.rs
 
-# Or from stdin
-curl https://api.github.com/users/octocat | \
-  unistructgen generate --input - --name GitHubUser
+# Or download first, then generate
+curl -o response.json https://api.github.com/users/octocat
+unistructgen generate --input response.json --name GitHubUser
 ```
 
 ## 💡 Use Cases

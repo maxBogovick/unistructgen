@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use serde::Serialize;
 use std::collections::HashMap;
-use unistructgen_proc_macro::generate_struct_from_json;
+use unistructgen_macro::generate_struct_from_json;
 
 // Базовый конфиг генерируем из JSON как из источника правды
 // (видео: меняем JSON → структуры обновляются автоматически)

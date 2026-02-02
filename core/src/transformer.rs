@@ -426,11 +426,10 @@ mod tests {
         let transformer = FieldOptionalizer::new();
         let result = transformer.transform(module).unwrap();
 
+        assert!(matches!(&result.types[0], IRType::Struct(_)));
         if let IRType::Struct(s) = &result.types[0] {
             assert!(s.fields[0].ty.is_optional());
             assert!(s.fields[1].ty.is_optional());
-        } else {
-            panic!("Expected struct");
         }
     }
 
@@ -446,11 +445,10 @@ mod tests {
         let transformer = DocCommentAdder::new();
         let result = transformer.transform(module).unwrap();
 
+        assert!(matches!(&result.types[0], IRType::Struct(_)));
         if let IRType::Struct(s) = &result.types[0] {
             assert!(s.doc.is_some());
             assert!(s.fields[0].doc.is_some());
-        } else {
-            panic!("Expected struct");
         }
     }
 
@@ -497,11 +495,10 @@ mod tests {
         let transformer = FieldRenamer::new(mappings);
         let result = transformer.transform(module).unwrap();
 
+        assert!(matches!(&result.types[0], IRType::Struct(_)));
         if let IRType::Struct(s) = &result.types[0] {
             assert_eq!(s.fields[0].name, "identifier");
             assert_eq!(s.fields[1].name, "full_name");
-        } else {
-            panic!("Expected struct");
         }
     }
 }

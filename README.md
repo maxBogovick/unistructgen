@@ -15,6 +15,18 @@ Parse JSON, OpenAPI, SQL, GraphQL, Markdown, or .env schemas into a language-agn
 
 ---
 
+**Why developers use UniStructGen**
+- **Ship types fast** — generate Rust structs from real JSON and schemas at compile time.
+- **Keep LLM tools correct** — auto‑generate JSON Schemas and tool definitions from Rust functions.
+- **Reduce boilerplate** — one source of truth for types, validation, and docs.
+
+Try the killer example:
+```bash
+cargo run -p killer-example
+```
+
+---
+
 ## What Problem Does This Solve
 
 You have data schemas -- JSON payloads, database DDL, OpenAPI specs, GraphQL types, environment variables. You need Rust structs that match. You also need JSON Schema to tell an LLM exactly what shape of response you expect. And you need to turn plain Rust functions into tools the LLM can call.
@@ -35,9 +47,20 @@ Instead of hand-writing struct definitions, JSON Schema, serde attributes, and t
 
 ---
 
+## Project Status
+
+**Stable core:** `core/`, `codegen/`, `parsers/*`, `proc-macro/`, `cli/` are the primary developer-facing surface and should remain backward compatible within minor versions.
+
+**Experimental/optional:** `llm/`, `mcp/`, `agent/`, and `schema-registry/` are evolving and may change more frequently.
+
+**Compile-time fetch controls:** set `UNISTRUCTGEN_FETCH_OFFLINE=1` to disable network, `UNISTRUCTGEN_FETCH_CACHE=0` to disable caching, `UNISTRUCTGEN_FETCH_CACHE_DIR=/path` to override cache location, and `UNISTRUCTGEN_FETCH_TIMEOUT_MS=...` to override timeouts.
+
+---
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Killer Example (60 Seconds)](#killer-example-60-seconds)
 - [Core Feature: `#[ai_tool]` Macro](#core-feature-ai_tool-macro)
 - [Core Feature: JSON Schema for Structured LLM Outputs](#core-feature-json-schema-for-structured-llm-outputs)
 - [Core Feature: AI Validation Loop](#core-feature-ai-validation-loop)
@@ -52,6 +75,7 @@ Instead of hand-writing struct definitions, JSON Schema, serde attributes, and t
 - [Crate Map](#crate-map)
 - [Type Mapping Reference](#type-mapping-reference)
 - [Examples](#examples)
+- [Blog](#blog)
 - [License](#license)
 
 ---
@@ -69,7 +93,7 @@ unistructgen-core = "0.1"
 unistructgen-codegen = "0.1"
 
 # Proc macros: generate_struct_from_json!, #[ai_tool], openapi_to_rust!, etc.
-unistructgen-proc-macro = "0.1"
+unistructgen-macro = "0.1"
 
 # LLM clients (OpenAI, Ollama) with structured output support
 unistructgen-llm = "0.1"
@@ -85,7 +109,7 @@ unistructgen-markdown-parser = "0.1"
 Minimal example -- generate a Rust struct from JSON at compile time:
 
 ```rust
-use unistructgen_proc_macro::generate_struct_from_json;
+use unistructgen_macro::generate_struct_from_json;
 
 generate_struct_from_json! {
     name = "User",
@@ -99,12 +123,29 @@ generate_struct_from_json! {
 
 ---
 
+## Killer Example (60 Seconds)
+
+One small program that shows the core value: **types + tool schemas + safe execution**.
+
+```bash
+cargo run -p killer-example
+```
+
+What it demonstrates:
+- Compile-time Rust types from JSON
+- LLM tool schema generation from functions
+- Safe, structured tool execution
+
+See: `examples/killer-example/README.md`
+
+---
+
 ## Core Feature: `#[ai_tool]` Macro
 
 Turn any Rust function into an LLM-callable tool with a single attribute. The macro generates a JSON Schema from the function signature, creates a tool struct implementing `AiTool`, and handles JSON argument deserialization.
 
 ```rust
-use unistructgen_proc_macro::ai_tool;
+use unistructgen_macro::ai_tool;
 use unistructgen_core::{ToolRegistry, Context};
 
 /// Calculate shipping cost based on weight and destination
@@ -279,7 +320,6 @@ let response = client.complete(CompletionRequest {
 Define your types in Rust and generate the IR/Schema from them. This is the reverse of the standard flow, allowing you to use Rust as the Source of Truth.
 
 ```rust
-use unistructgen_macro::IntoIR;
 use unistructgen_core::IntoIR;
 use unistructgen_codegen::JsonSchemaRenderer;
 
@@ -415,7 +455,7 @@ let fixed_code = fix.apply(&original_source)?;
 Fetch a JSON API at compile time and generate type-safe structs. No manual type definitions. No codegen scripts.
 
 ```rust
-use unistructgen_proc_macro::struct_from_external_api;
+use unistructgen_macro::struct_from_external_api;
 
 struct_from_external_api! {
     struct_name = "GithubRepo",
@@ -627,6 +667,8 @@ openapi_to_rust! {
 // Also supports: spec = "inline yaml...", url = "https://..."
 ```
 
+Client generation is a typed scaffold (best-effort) and may require manual adjustments for edge cases.
+
 ### 3. SQL DDL
 
 ```rust
@@ -800,7 +842,7 @@ let code = plugins.after_generate(code)?;
 ## CLI
 
 ```bash
-cargo install unistructgen-cli
+cargo install unistructgen
 
 # Generate Rust structs from JSON
 unistructgen generate --input data.json --name MyStruct --serde
@@ -808,7 +850,7 @@ unistructgen generate --input data.json --name MyStruct --serde
 # Generate from Markdown table
 unistructgen generate --input schema.md --name Config
 
-# Generate HTTP client from OpenAPI spec
+# Generate HTTP client scaffold from OpenAPI spec
 unistructgen client --spec api.yaml --name GitHub --output ./generated
 
 # AI-powered error fixing (experimental)
@@ -914,7 +956,7 @@ unistructgen/
 │   ├── graphql_parser/      # unistructgen-graphql-parser
 │   └── env_parser/          # unistructgen-env-parser
 │
-├── proc-macro/              # unistructgen-proc-macro
+├── proc-macro/              # unistructgen-macro
 │   └── src/
 │       ├── lib.rs           # 8 macros: generate_struct_from_json!, #[json_struct],
 │       │                    #   struct_from_external_api!, openapi_to_rust!,
@@ -943,7 +985,7 @@ unistructgen/
 │       ├── agent.rs         # ReAct loop implementation
 │       └── pipeline.rs      # DAG orchestration
 │
-├── cli/                     # unistructgen-cli
+├── cli/                     # unistructgen
 │   └── src/
 │       ├── main.rs          # generate, client, fix commands
 │       └── commands/        # Command implementations
@@ -988,10 +1030,15 @@ How IR types map across parsers and generators:
 | `tools-agent` | Register functions as AI tools, batch execution, dependency injection via Context, LlmClientFactory |
 | `docu-agent` | RAG ingestion with SemanticChunker, JSON Schema contract, AI validation loop with auto-correction |
 | `code-agent` | Compiler-driven development: AI writes code, CargoDiagnostics checks, errors fed back, AI fixes iteratively |
-| `github-client` | Full GitHub API client generated from OpenAPI spec |
+| `github-client` | GitHub API client scaffold generated from OpenAPI spec |
 | `blog-api` | Blog API types from OpenAPI |
 | `api-example` | Struct generation from live API responses with `struct_from_external_api!` |
 | `proc-macro-example` | All proc macros: JSON, OpenAPI, SQL, GraphQL, .env |
+| `killer-example` | Types + LLM tool schema + safe execution in one file |
+
+## Blog
+
+- `docs/blog/announcing-unistructgen.md`
 
 ---
 
@@ -1011,7 +1058,7 @@ cargo test -p unistructgen-core
 cargo build --release
 
 # Run CLI in dev
-cargo run -p unistructgen-cli -- generate --input data.json --name MyStruct
+cargo run -p unistructgen -- generate --input data.json --name MyStruct
 ```
 
 ---

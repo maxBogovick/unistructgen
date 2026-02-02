@@ -51,6 +51,21 @@ cargo install unistructgen
 
 ---
 
+## ⚡ Killer Example (60 Seconds)
+
+```bash
+cargo run -p killer-example
+```
+
+This single example shows:
+- Compile-time type generation from JSON
+- LLM tool schemas from Rust functions
+- Safe, structured tool execution
+
+See `examples/killer-example/README.md` for details.
+
+---
+
 ## 🎯 Your First Struct
 
 Let's start with the simplest example and build from there.
@@ -467,9 +482,8 @@ cargo run
 
 ```bash
 # Fetch from API and generate
-curl https://api.example.com/schema.json \
-    | unistructgen generate --name ApiSchema \
-    > src/api_schema.rs
+curl -o schema.json https://api.example.com/schema.json
+unistructgen generate --input schema.json --name ApiSchema --output src/api_schema.rs
 
 # In CI/CD (GitHub Actions example)
 - name: Generate structs
@@ -486,6 +500,15 @@ curl https://api.example.com/schema.json \
 ---
 
 ## 📚 Common Patterns
+
+### Compile-Time Fetch Controls
+
+For macros that fetch remote content at compile time (`struct_from_external_api!`, `openapi_to_rust!` with `url`, `env_file` over HTTP), you can control networking behavior:
+
+- `UNISTRUCTGEN_FETCH_OFFLINE=1` — disable network access (cache only)
+- `UNISTRUCTGEN_FETCH_CACHE=0` — disable caching
+- `UNISTRUCTGEN_FETCH_CACHE_DIR=/path` — custom cache directory
+- `UNISTRUCTGEN_FETCH_TIMEOUT_MS=60000` — override timeout (ms)
 
 ### Pattern 1: Configuration Files
 

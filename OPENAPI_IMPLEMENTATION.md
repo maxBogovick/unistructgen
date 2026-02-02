@@ -347,7 +347,7 @@ cargo publish --package unistructgen-openapi-parser
 
 ### 4. **CLI Generator Tool**
 ```bash
-cargo install unistructgen-cli
+cargo install unistructgen
 
 # Generate from OpenAPI
 unistructgen generate --openapi api.yaml --output src/api/
