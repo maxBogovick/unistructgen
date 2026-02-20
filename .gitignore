@@ -23,3 +23,6 @@ Thumbs.db
 /out
 /.github
 /docs
+/examples/**
+**.md
+!README.md
