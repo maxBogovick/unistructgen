@@ -1,0 +1,24 @@
+[package]
+name = "unistructgen-cli"
+version = "0.2.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[[bin]]
+name = "unistructgen"
+path = "src/main.rs"
+
+[dependencies]
+unistructgen = { path = "../", features = ["full"] }
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+colored = "2.1"
+inquire = "0.7"
+dotenv = "0.15"
+ureq = "2.9"
+openapiv3 = { version = "2.0", features = ["skip_serializing_defaults"] }
+indexmap = "2.2"

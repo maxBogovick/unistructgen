@@ -1,4 +1,3 @@
-[workspace]
 
 [package]
 name = "github-client"
@@ -12,8 +11,8 @@ path = "src/demo.rs"
 
 [dependencies]
 # UniStructGen - This generates ALL the types! ✨
-unistructgen-macro = { path = "../../proc-macro" }
-unistructgen-core = { path = "../../core" }
+unistructgen-macro = { path = "../../unistructgen-macro" }
+unistructgen = { path = "../../", features = ["full"] }
 
 # HTTP client
 reqwest = { version = "0.11", features = ["json", "blocking"] }

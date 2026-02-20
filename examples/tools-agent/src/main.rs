@@ -1,6 +1,6 @@
 use unistructgen_macro::ai_tool;
-use unistructgen_core::{ToolRegistry, Context, tools::ToolCall};
-use unistructgen_llm::{LlmClientFactory, LlmClient};
+use unistructgen::core::{ToolRegistry, Context, tools::ToolCall};
+use unistructgen::llm::{LlmClientFactory, LlmClient};
 use colored::*;
 
 #[derive(Clone, Debug)]
@@ -52,7 +52,7 @@ async fn main() -> anyhow::Result<()> {
     println!("(Requires local Ollama or OpenAI key to run for real)");
     
     // Attempt to create client using Factory
-    let client_result: unistructgen_llm::Result<Box<dyn LlmClient>> = LlmClientFactory::new().build();
+    let client_result: unistructgen::llm::Result<Box<dyn LlmClient>> = LlmClientFactory::new().build();
     if let Ok(client) = client_result {
         println!("Client initialized: {}", client.model().cyan());
     } else {

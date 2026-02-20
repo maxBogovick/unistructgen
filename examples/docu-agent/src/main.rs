@@ -1,7 +1,7 @@
-use unistructgen_core::api::{StructGen, FieldType};
-use unistructgen_codegen::JsonSchemaRenderer;
-use unistructgen_core::{CodeGenerator, ValidationReport, map_serde_error};
-use unistructgen_markdown_parser::chunker::{SemanticChunker, SplitterOptions};
+use unistructgen::core::api::{StructGen, FieldType};
+use unistructgen::codegen::JsonSchemaRenderer;
+use unistructgen::core::{CodeGenerator, ValidationReport, map_serde_error};
+use unistructgen::parsers::markdown::chunker::{SemanticChunker, SplitterOptions};
 use colored::*;
 use serde::{Deserialize, Serialize};
 use std::fs;

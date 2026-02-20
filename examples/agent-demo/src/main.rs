@@ -1,7 +1,7 @@
-use unistructgen_agent::{Agent, AgentPipeline};
-use unistructgen_core::ToolRegistry;
+use unistructgen::agent::{Agent, AgentPipeline};
+use unistructgen::core::ToolRegistry;
 use unistructgen_macro::ai_tool;
-use unistructgen_llm::{LlmClient, LlmClientFactory, Provider};
+use unistructgen::llm::{LlmClient, LlmClientFactory, Provider};
 use std::sync::Arc;
 
 // --- Tools ---

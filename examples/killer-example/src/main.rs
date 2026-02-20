@@ -1,6 +1,6 @@
 use anyhow::Result;
 use serde_json::json;
-use unistructgen_core::{Context, ToolRegistry};
+use unistructgen::core::{Context, ToolRegistry};
 use unistructgen_macro::{ai_tool, generate_struct_from_json};
 
 // 1) Generate Rust types at compile time from JSON

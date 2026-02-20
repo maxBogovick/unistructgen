@@ -1,7 +1,7 @@
-use unistructgen_core::CodeGenerator;
+use unistructgen::core::CodeGenerator;
 use unistructgen_macro::IntoIR;
-use unistructgen_codegen::JsonSchemaRenderer;
-use unistructgen_core::IRModule;
+use unistructgen::codegen::JsonSchemaRenderer;
+use unistructgen::core::IRModule;
 
 #[derive(IntoIR)]
 struct User {
@@ -22,7 +22,7 @@ struct User {
 
 fn main() -> anyhow::Result<()> {
     // 1. Get the IR definition from the Rust struct
-    let definition = <User as unistructgen_core::IntoIR>::ir_definition()
+    let definition = <User as unistructgen::core::IntoIR>::ir_definition()
         .ok_or_else(|| anyhow::anyhow!("Failed to get IR definition"))?;
 
     // 2. Wrap it in a Module

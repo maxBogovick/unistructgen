@@ -1,6 +1,6 @@
 use unistructgen_macro::ai_tool;
-use unistructgen_core::{ToolRegistry, Context};
-use unistructgen_mcp::serve_stdio;
+use unistructgen::core::{ToolRegistry, Context};
+use unistructgen::mcp::serve_stdio;
 use std::sync::Arc;
 
 /// Echo the input back

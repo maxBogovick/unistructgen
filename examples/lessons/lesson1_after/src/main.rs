@@ -1,5 +1,5 @@
 use anyhow::Result;
-use unistructgen_core::{Context, ToolRegistry};
+use unistructgen::core::{Context, ToolRegistry};
 use unistructgen_macro::{ai_tool, generate_struct_from_json};
 
 // 1) Компилятор сам генерирует структуру из JSON

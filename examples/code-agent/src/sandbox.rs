@@ -14,7 +14,7 @@ impl RustSandbox {
     /// Create a new sandbox environment.
     pub fn new() -> Result<Self> {
         let tmp_dir = tempfile::Builder::new()
-            .prefix("unistructgen_agent_")
+            .prefix("unistructgen::agent_")
             .tempdir()?;
         
         let project_path = tmp_dir.path().to_path_buf();
