@@ -13,24 +13,14 @@ members = [
     "llm",
     "mcp",
     "agent",
-    "examples/docu-agent",
-    "examples/mcp-server",
-    "examples/tools-agent",
-    "examples/agent-demo",
-    "examples/reverse-ir",
-    "examples/killer-example",
-]
-exclude = [
-    "examples/github-client",
-    "examples/blog-api",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-authors = ["Maxim"]
+authors = ["Maxim Bogovic"]
 description = "A powerful Rust code generator that creates type-safe structs from JSON, Markdown tables, and SQL DDL"
 repository = "https://github.com/maxBogovick/unistructgen"
 homepage = "https://github.com/maxBogovick/unistructgen"

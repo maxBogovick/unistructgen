@@ -30,13 +30,13 @@ ureq = "2.9"
 openapiv3 = { version = "2.0", features = ["skip_serializing_defaults"] }
 indexmap = "2.2"
 
-unistructgen-core = { path = "../core" }
-unistructgen-llm = { path = "../llm" }
-unistructgen-codegen = { path = "../codegen" }
-unistructgen-json-parser = { path = "../parsers/json_parser" }
-unistructgen-markdown-parser = { path = "../parsers/markdown_parser" }
-unistructgen-openapi-parser = { path = "../parsers/openapi_parser" }
-unistructgen-sql-parser = { path = "../parsers/sql_parser" }
+unistructgen-core = { path = "../core", version = "0.1.0" }
+unistructgen-llm = { path = "../llm", version = "0.1.0" }
+unistructgen-codegen = { path = "../codegen", version = "0.1.0" }
+unistructgen-json-parser = { path = "../parsers/json_parser", version = "0.1.0" }
+unistructgen-markdown-parser = { path = "../parsers/markdown_parser", version = "0.1.0" }
+unistructgen-openapi-parser = { path = "../parsers/openapi_parser", version = "0.1.0" }
+unistructgen-sql-parser = { path = "../parsers/sql_parser", version = "0.1.0" }
 
 [dev-dependencies]
 assert_cmd = "2.0"

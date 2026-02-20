@@ -15,13 +15,13 @@ categories.workspace = true
 proc-macro = true
 
 [dependencies]
-unistructgen-core = { path = "../core" }
-unistructgen-json-parser = { path = "../parsers/json_parser" }
-unistructgen-openapi-parser = { path = "../parsers/openapi_parser" }
-unistructgen-env-parser = { path = "../parsers/env_parser" }
-unistructgen-sql-parser = { path = "../parsers/sql_parser" }
-unistructgen-graphql-parser = { path = "../parsers/graphql_parser" }
-unistructgen-codegen = { path = "../codegen" }
+unistructgen-core = { path = "../core", version = "0.1.0" }
+unistructgen-json-parser = { path = "../parsers/json_parser", version = "0.1.0" }
+unistructgen-openapi-parser = { path = "../parsers/openapi_parser", version = "0.1.0" }
+unistructgen-env-parser = { path = "../parsers/env_parser", version = "0.1.0" }
+unistructgen-sql-parser = { path = "../parsers/sql_parser", version = "0.1.0" }
+unistructgen-graphql-parser = { path = "../parsers/graphql_parser", version = "0.1.0" }
+unistructgen-codegen = { path = "../codegen", version = "0.1.0" }
 syn = { version = "2.0", features = ["full", "extra-traits"] }
 quote = "1.0"
 proc-macro2 = "1.0"

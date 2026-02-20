@@ -12,6 +12,6 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-unistructgen-core = { path = "../../core" }
+unistructgen-core = { path = "../../core", version = "0.1.0" }
 thiserror.workspace = true
 anyhow.workspace = true
