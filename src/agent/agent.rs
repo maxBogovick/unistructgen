@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use crate::core::{Context, ToolRegistry};
+use crate::llm::{CompletionRequest, LlmClient, Message};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::sync::Arc;
 use tracing::{debug, info, warn};
-use crate::core::{Context, ToolRegistry};
-use crate::llm::{CompletionRequest, LlmClient, Message, Role};
-use regex::Regex;
 
 /// Represents a single autonomous agent capable of using tools
 pub struct Agent {
@@ -14,7 +14,7 @@ pub struct Agent {
     context: Context,
     system_prompt: String,
     max_iterations: usize,
-    model: String,
+    _model: String,
 }
 
 #[derive(Default)]
@@ -73,7 +73,7 @@ impl AgentBuilder {
             context: self.context.unwrap_or_else(Context::new),
             system_prompt: self.system_prompt.unwrap_or_else(|| "You are a helpful assistant.".to_string()),
             max_iterations: self.max_iterations.unwrap_or(10),
-            model,
+            _model: model,
         })
     }
 }

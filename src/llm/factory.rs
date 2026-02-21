@@ -1,6 +1,6 @@
-use crate::llm::{LlmClient, Result, LlmError};
 use crate::llm::ollama::OllamaClient;
 use crate::llm::openai::OpenAiClient;
+use crate::llm::{LlmClient, Result};
 use std::env;
 
 #[derive(Debug, Clone, PartialEq)]

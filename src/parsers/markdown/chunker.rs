@@ -1,4 +1,4 @@
-use pulldown_cmark::{Event, Parser, Tag, HeadingLevel};
+use pulldown_cmark::{Event, HeadingLevel, Parser, Tag};
 use serde::{Deserialize, Serialize};
 
 /// A semantic chunk of text from a Markdown document.

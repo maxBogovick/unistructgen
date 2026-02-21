@@ -120,7 +120,7 @@ mod base64 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::AuthType;
 
     #[test]
     fn test_auth_type_creation() {

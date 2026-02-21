@@ -1,9 +1,9 @@
-use crate::llm::{LlmClient, CompletionRequest, Result, LlmError, Role, LlmStream};
+use crate::llm::{CompletionRequest, LlmClient, LlmError, LlmStream, Result, Role};
 use async_trait::async_trait;
+use futures_util::StreamExt;
 use reqwest::Client;
 use serde_json::json;
 use std::env;
-use futures_util::StreamExt;
 
 pub struct OpenAiClient {
     api_key: String,

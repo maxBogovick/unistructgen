@@ -1,15 +1,15 @@
-use std::collections::HashSet;
-use thiserror::Error;
 use crate::core::{
     IRField,
     IRModule,
     IRStruct,
     IRType,
     IRTypeRef,
-    PrimitiveKind,
     Parser,
     ParserMetadata,
+    PrimitiveKind,
 };
+use std::collections::HashSet;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum EnvParserError {

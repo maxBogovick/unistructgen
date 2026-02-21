@@ -1,17 +1,17 @@
-use sqlparser::dialect::GenericDialect;
-use sqlparser::parser::Parser as SqlParserImpl;
-use sqlparser::ast::{Statement, DataType, ColumnDef};
-use thiserror::Error;
 use crate::core::{
     IRField,
     IRModule,
     IRStruct,
     IRType,
     IRTypeRef,
-    PrimitiveKind,
     Parser,
     ParserMetadata,
+    PrimitiveKind,
 };
+use sqlparser::ast::{ColumnDef, DataType, Statement};
+use sqlparser::dialect::GenericDialect;
+use sqlparser::parser::Parser as SqlParserImpl;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum SqlParserError {

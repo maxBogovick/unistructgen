@@ -79,27 +79,27 @@ pub mod diagnostics;
 pub mod patch;
 pub mod into_ir;
 
+pub use async_trait::async_trait;
+pub use codegen::{CodeGenerator, CodeGeneratorExt, CodegenResult, GeneratorMetadata, MultiGenerator};
+pub use context::Context;
+pub use error::*;
+pub use into_ir::IntoIR;
 // Re-export main types and traits
 pub use ir::*;
-pub use into_ir::IntoIR;
-pub use error::*;
 pub use parser::{Parser, ParserExt, ParserMetadata, ParserResult};
-pub use codegen::{CodeGenerator, CodeGeneratorExt, GeneratorMetadata, CodegenResult, MultiGenerator};
-pub use transformer::{IRTransformer, TransformError};
 pub use pipeline::{Pipeline, PipelineBuilder, PipelineError};
-pub use plugin::{Plugin, PluginRegistry, PluginError};
-pub use visitor::{IRVisitor, walk_module, walk_type, walk_struct, walk_field, walk_type_ref};
+pub use plugin::{Plugin, PluginError, PluginRegistry};
+pub use tools::{AiTool, ToolError, ToolRegistry, ToolResult};
+pub use transformer::{IRTransformer, TransformError};
 pub use validation::*;
-pub use tools::{AiTool, ToolRegistry, ToolError, ToolResult};
-pub use context::Context;
-pub use async_trait::async_trait;
+pub use visitor::{walk_field, walk_module, walk_struct, walk_type, walk_type_ref, IRVisitor};
 
 // Re-export unified API for convenient access
 pub use api::{
-    StructGen, EnumGen, ModuleGen,
+    from_json, render_module, render_module_with_options,
+    ApiError, ApiResult,
+    EnumGen,
     FieldBuilder, FieldType,
-    RenderOptions as ApiRenderOptions,
-    ApiResult, ApiError,
-    from_json, JsonGenBuilder,
-    render_module, render_module_with_options,
+    JsonGenBuilder, ModuleGen,
+    RenderOptions as ApiRenderOptions, StructGen,
 };

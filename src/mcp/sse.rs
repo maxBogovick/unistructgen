@@ -1,47 +1,47 @@
-#[cfg(feature = "sse")]
-use std::net::SocketAddr;
-#[cfg(feature = "sse")]
-use std::sync::Arc;
-#[cfg(feature = "sse")]
-use tokio::sync::mpsc;
-#[cfg(feature = "sse")]
-use axum::{
-    routing::{get, post},
-    Router,
-    response::{sse::{Event, Sse}, IntoResponse},
-    extract::{State, Query},
-    Json,
-};
-#[cfg(feature = "sse")]
-use futures_util::stream::{Stream, StreamExt};
-#[cfg(feature = "sse")]
-use dashmap::DashMap;
-#[cfg(feature = "sse")]
-use serde::Deserialize;
-#[cfg(feature = "sse")]
-use uuid::Uuid;
-#[cfg(feature = "sse")]
+#[cfg(feature = "mcp")]
 use crate::core::{Context, ToolRegistry};
-#[cfg(feature = "sse")]
-use crate::mcp::protocol::{JsonRpcRequest, JsonRpcResponse};
-#[cfg(feature = "sse")]
+#[cfg(feature = "mcp")]
+use crate::mcp::protocol::JsonRpcRequest;
+#[cfg(feature = "mcp")]
 use crate::mcp::server::McpServer;
+#[cfg(feature = "mcp")]
+use axum::{
+    extract::{Query, State},
+    response::{sse::{Event, Sse}, IntoResponse},
+    routing::{get, post},
+    Json,
+    Router,
+};
+#[cfg(feature = "mcp")]
+use dashmap::DashMap;
+#[cfg(feature = "mcp")]
+use futures_util::stream::StreamExt;
+#[cfg(feature = "mcp")]
+use serde::Deserialize;
+#[cfg(feature = "mcp")]
+use std::net::SocketAddr;
+#[cfg(feature = "mcp")]
+use std::sync::Arc;
+#[cfg(feature = "mcp")]
+use tokio::sync::mpsc;
+#[cfg(feature = "mcp")]
+use uuid::Uuid;
 
-#[cfg(feature = "sse")]
+#[cfg(feature = "mcp")]
 struct AppState {
     server: Arc<McpServer>,
     // Map session_id -> channel sender
     sessions: Arc<DashMap<String, mpsc::UnboundedSender<Event>>>,
 }
 
-#[cfg(feature = "sse")]
+#[cfg(feature = "mcp")]
 #[derive(Deserialize)]
 struct SseQuery {
     #[serde(default)]
     id: Option<String>,
 }
 
-#[cfg(feature = "sse")]
+#[cfg(feature = "mcp")]
 /// Start an MCP server over SSE (Server-Sent Events)
 pub async fn serve_sse(
     registry: Arc<ToolRegistry>,
@@ -75,7 +75,7 @@ pub async fn serve_sse(
     Ok(())
 }
 
-#[cfg(feature = "sse")]
+#[cfg(feature = "mcp")]
 async fn sse_handler(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SseQuery>,
@@ -101,7 +101,7 @@ async fn sse_handler(
     Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default())
 }
 
-#[cfg(feature = "sse")]
+#[cfg(feature = "mcp")]
 async fn message_handler(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SseQuery>,

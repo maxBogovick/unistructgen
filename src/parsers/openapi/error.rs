@@ -46,7 +46,7 @@ pub enum OpenApiError {
     InvalidComposition(String),
 
     /// HTTP fetch error
-    #[cfg(feature = "fetch")]
+    #[cfg(feature = "openapi")]
     #[error("Failed to fetch OpenAPI spec from URL: {0}")]
     FetchError(String),
 

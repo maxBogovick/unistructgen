@@ -22,3 +22,6 @@ dotenv = "0.15"
 ureq = "2.9"
 openapiv3 = { version = "2.0", features = ["skip_serializing_defaults"] }
 indexmap = "2.2"
+[dev-dependencies]
+assert_cmd = "2.0"
+tempfile = "3.10"

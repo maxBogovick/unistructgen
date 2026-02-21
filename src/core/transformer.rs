@@ -147,7 +147,7 @@ impl IRTransformer for FieldOptionalizer {
 
     fn transform(&self, mut module: IRModule) -> Result<IRModule, TransformError> {
         for ty in &mut module.types {
-            if let IRType::Struct(ref mut s) = ty {
+            if let IRType::Struct(s) = ty {
                 for field in &mut s.fields {
                     if !field.ty.is_optional() {
                         field.ty = field.ty.clone().make_optional();
@@ -233,7 +233,7 @@ impl IRTransformer for DocCommentAdder {
     fn transform(&self, mut module: IRModule) -> Result<IRModule, TransformError> {
         for ty in &mut module.types {
             match ty {
-                IRType::Struct(ref mut s) => {
+                IRType::Struct(s) => {
                     if s.doc.is_none() {
                         s.doc = Some(format!("Represents a {}", self.humanize_name(&s.name)));
                     }
@@ -246,7 +246,7 @@ impl IRTransformer for DocCommentAdder {
                         }
                     }
                 }
-                IRType::Enum(ref mut e) => {
+                IRType::Enum(e) => {
                     if e.doc.is_none() {
                         e.doc = Some(format!("Represents a {} enum", self.humanize_name(&e.name)));
                     }
@@ -385,7 +385,7 @@ impl IRTransformer for FieldRenamer {
 
     fn transform(&self, mut module: IRModule) -> Result<IRModule, TransformError> {
         for ty in &mut module.types {
-            if let IRType::Struct(ref mut s) = ty {
+            if let IRType::Struct(s) = ty {
                 for field in &mut s.fields {
                     if let Some(new_name) = self.mappings.get(&field.name) {
                         field.name = new_name.clone();

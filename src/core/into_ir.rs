@@ -1,4 +1,4 @@
-use crate::core::ir::{FieldConstraints, IRField, IRStruct, IRType, IRTypeRef, PrimitiveKind};
+use crate::core::ir::{IRType, IRTypeRef, PrimitiveKind};
 
 /// Trait to convert Rust types into UniStructGen IR.
 ///

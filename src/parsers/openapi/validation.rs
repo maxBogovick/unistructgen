@@ -1,7 +1,7 @@
 //! Validation constraint extraction from OpenAPI schemas
 
-use openapiv3::{Schema, SchemaKind, Type};
 use crate::core::FieldConstraints;
+use openapiv3::{Schema, SchemaKind, Type};
 
 /// Extract validation constraints from an OpenAPI schema
 pub fn extract_validation_constraints(schema: &Schema) -> FieldConstraints {

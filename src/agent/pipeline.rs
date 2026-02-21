@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::agent::agent::Agent;
 use anyhow::{anyhow, Result};
+use std::collections::HashMap;
 use tracing::info;
 
 /// A pipeline of agents executed as a Directed Acyclic Graph (DAG)

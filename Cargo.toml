@@ -1,8 +1,8 @@
 [package]
 name = "unistructgen"
-version = "0.2.0"
-edition = "2021"
-authors = ["Maxim"]
+version = "0.2.2"
+edition = "2024"
+authors = ["Maxim Bogovic (https://bogovick.com)"]
 description = "A powerful Rust code generator"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/maxBogovick/unistructgen"
@@ -15,9 +15,9 @@ members = ["unistructgen-macro", "unistructgen-cli"]
 
 # Восстанавливаем наследование для старых манифестов
 [workspace.package]
-version = "0.2.0"
-edition = "2021"
-authors = ["Maxim"]
+version = "0.2.2"
+edition = "2024"
+authors = ["Maxim Bogovic (https://bogovick.com)"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/maxBogovick/unistructgen"
 homepage = "https://github.com/maxBogovick/unistructgen"
@@ -68,9 +68,9 @@ graphql = ["dep:graphql-parser"]
 env = []
 
 # Advanced
-llm = ["dep:reqwest", "dep:dotenv"]
-agent = ["llm", "dep:tracing", "dep:uuid", "dep:regex"]
-mcp = ["dep:tracing", "dep:axum", "dep:tower-http", "dep:dashmap", "dep:tokio-stream", "dep:uuid"]
+llm = ["dep:reqwest", "dep:dotenv", "dep:tokio"]
+agent = ["llm", "dep:tracing", "dep:uuid", "dep:regex", "dep:tokio"]
+mcp = ["dep:tracing", "dep:axum", "dep:tower-http", "dep:dashmap", "dep:tokio-stream", "dep:uuid", "dep:tokio"]
 
 [dependencies]
 serde = { workspace = true }

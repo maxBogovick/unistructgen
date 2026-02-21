@@ -4,9 +4,9 @@
 //! Instead of hardcoding type detection logic, you can compose different detectors
 //! and inference strategies.
 
+use crate::core::{IRTypeRef, PrimitiveKind};
 use serde_json::Value;
 use thiserror::Error;
-use crate::core::{IRTypeRef, PrimitiveKind};
 
 /// Errors that can occur during type inference
 #[derive(Error, Debug)]

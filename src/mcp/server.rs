@@ -1,7 +1,7 @@
-use std::sync::Arc;
-use serde_json::{json, Value};
 use crate::core::{Context, ToolRegistry};
 use crate::mcp::protocol::*;
+use serde_json::{json, Value};
+use std::sync::Arc;
 
 /// The MCP Server implementation logic
 pub struct McpServer {

@@ -1,5 +1,8 @@
 //! Schema conversion from OpenAPI to IR
 
+use crate::core::{
+    IREnum, IREnumVariant, IRField, IRStruct, IRType, IRTypeRef, PrimitiveKind,
+};
 use crate::parsers::openapi::error::{OpenApiError, Result};
 use crate::parsers::openapi::options::OpenApiParserOptions;
 use crate::parsers::openapi::types::{
@@ -10,9 +13,6 @@ use openapiv3::{
     OpenAPI, ReferenceOr, Schema, SchemaKind, Type,
 };
 use std::collections::HashSet;
-use crate::core::{
-    IREnum, IREnumVariant, IRField, IRStruct, IRType, IRTypeRef, PrimitiveKind,
-};
 
 /// Schema converter that maintains context and handles references
 pub struct SchemaConverter<'a> {

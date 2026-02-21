@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
 
-use std::pin::Pin;
 use futures_util::Stream;
+use std::pin::Pin;
 
 pub mod ollama;
 pub mod openai;

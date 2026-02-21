@@ -1,8 +1,8 @@
-use serde_json::{json, Map, Value};
 use crate::core::{
-    CodeGenerator, GeneratorMetadata, IRField, IRModule, IRStruct, IRType, IRTypeRef, PrimitiveKind,
-    IREnum,
+    CodeGenerator, GeneratorMetadata, IREnum, IRField, IRModule, IRStruct, IRType, IRTypeRef,
+    PrimitiveKind,
 };
+use serde_json::{json, Map, Value};
 use thiserror::Error;
 
 /// Errors that can occur during JSON Schema generation

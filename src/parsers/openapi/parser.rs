@@ -1,11 +1,11 @@
 //! Main OpenAPI parser implementation
 
+use crate::core::{IRModule, Parser, ParserMetadata};
 use crate::parsers::openapi::client::ClientGenerator;
 use crate::parsers::openapi::error::{OpenApiError, Result};
 use crate::parsers::openapi::options::OpenApiParserOptions;
 use crate::parsers::openapi::schema::SchemaConverter;
 use openapiv3::OpenAPI;
-use crate::core::{IRModule, Parser, ParserMetadata};
 
 /// OpenAPI/Swagger parser
 ///

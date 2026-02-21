@@ -11,6 +11,7 @@ fn cli_generate_json_smoke() {
 
     fs::write(&input_path, r#"{"id": 1, "name": "Alice"}"#).expect("write input");
 
+    #[allow(deprecated)]
     let mut cmd = Command::cargo_bin("unistructgen").expect("binary");
     cmd.args([
         "generate",
@@ -40,6 +41,7 @@ fn cli_client_smoke() {
         .join("tests")
         .join("test-api.yaml");
 
+    #[allow(deprecated)]
     let mut cmd = Command::cargo_bin("unistructgen").expect("binary");
     cmd.args([
         "client",

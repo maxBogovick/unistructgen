@@ -1,8 +1,8 @@
 //! Type conversion utilities for OpenAPI schemas
 
+use crate::core::{IRTypeRef, PrimitiveKind};
 use crate::parsers::openapi::error::{OpenApiError, Result};
 use openapiv3::{Schema, SchemaKind, Type};
-use crate::core::{IRTypeRef, PrimitiveKind};
 
 /// Convert OpenAPI type to IR type reference
 pub fn openapi_type_to_ir(

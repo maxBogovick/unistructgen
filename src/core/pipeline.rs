@@ -322,7 +322,7 @@ where
 mod tests {
     use super::*;
     use crate::core::{
-        transformer::FieldOptionalizer, IRModule, IRField,
+        transformer::FieldOptionalizer, IRField, IRModule,
         IRStruct, IRType, IRTypeRef, PrimitiveKind,
     };
 

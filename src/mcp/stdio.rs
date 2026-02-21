@@ -1,9 +1,8 @@
-use std::io::{self, BufRead};
-use std::sync::Arc;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use crate::core::{Context, ToolRegistry};
 use crate::mcp::protocol::{JsonRpcError, JsonRpcRequest, JsonRpcResponse};
 use crate::mcp::server::McpServer;
+use std::sync::Arc;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
 /// Start an MCP server over stdio
 ///

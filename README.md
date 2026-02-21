@@ -4,7 +4,7 @@
 
 Parse JSON, OpenAPI, SQL, GraphQL, Markdown, or .env schemas into a language-agnostic intermediate representation (IR), then generate idiomatic Rust structs, JSON Schema for LLM structured outputs, or wire up AI tool calling -- all with compile-time safety.
 
-**Author**: [Maxim Bogovic](https://bogovick.com)
+**Author**: Maxim Bogovic (more info at [https://bogovick.com](https://bogovick.com))
 **Version**: 0.1.0
 **License**: MIT / Apache-2.0
 **Rust**: 1.70+
@@ -86,24 +86,19 @@ Add the crates you need to `Cargo.toml`:
 
 ```toml
 [dependencies]
-# Core IR types, traits, ToolRegistry, validation, Context
-unistructgen-core = "0.1"
+# The main crate with all features enabled (core, parsers, codegen, etc.)
+unistructgen = { version = "0.2.1", features = ["full"] }
 
-# Rust code renderer + JSON Schema generator
-unistructgen-codegen = "0.1"
+# Or pick specific features:
+# unistructgen = { version = "0.2.1", features = ["json", "llm", "agent", "mcp"] }
 
-# Proc macros: generate_struct_from_json!, #[ai_tool], openapi_to_rust!, etc.
-unistructgen-macro = "0.1"
+# Proc macros must be a separate crate:
+unistructgen-macro = "0.2"
 
-# LLM clients (OpenAI, Ollama) with structured output support
-unistructgen-llm = "0.1"
-
-# Parsers -- pick what you need
-unistructgen-json-parser = "0.1"
-unistructgen-openapi-parser = "0.1"
-unistructgen-markdown-parser = "0.1"
-# These parsers exist but are used primarily via proc-macros:
-# unistructgen-sql-parser, unistructgen-graphql-parser, unistructgen-env-parser
+# External dependencies used in examples
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 ```
 
 Minimal example -- generate a Rust struct from JSON at compile time:
@@ -146,7 +141,7 @@ Turn any Rust function into an LLM-callable tool with a single attribute. The ma
 
 ```rust
 use unistructgen_macro::ai_tool;
-use unistructgen_core::{ToolRegistry, Context};
+use unistructgen::core::{ToolRegistry, Context};
 
 /// Calculate shipping cost based on weight and destination
 #[ai_tool]
@@ -247,9 +242,8 @@ let results = registry.execute_batch(calls, &context).await;
 Generate Draft 2020-12 JSON Schema from any IR module. Use it as a contract for OpenAI `response_format.json_schema` or inject into system prompts for Ollama.
 
 ```rust
-use unistructgen_core::{StructGen, FieldType};
-use unistructgen_codegen::JsonSchemaRenderer;
-use unistructgen_core::CodeGenerator;
+use unistructgen::core::{StructGen, FieldType, CodeGenerator};
+use unistructgen::codegen::JsonSchemaRenderer;
 
 // Define the response structure
 let module = StructGen::new()
@@ -320,8 +314,8 @@ let response = client.complete(CompletionRequest {
 Define your types in Rust and generate the IR/Schema from them. This is the reverse of the standard flow, allowing you to use Rust as the Source of Truth.
 
 ```rust
-use unistructgen_core::IntoIR;
-use unistructgen_codegen::JsonSchemaRenderer;
+use unistructgen::core::IntoIR;
+use unistructgen::codegen::JsonSchemaRenderer;
 
 #[derive(IntoIR)]
 struct User {
@@ -339,7 +333,7 @@ struct User {
 let definition = User::ir_definition().unwrap();
 
 // Wrap in a module
-let mut module = unistructgen_core::ir::IRModule::new("UserModule".to_string());
+let mut module = unistructgen::core::ir::IRModule::new("UserModule".to_string());
 module.add_type(definition);
 
 // Generate JSON Schema
@@ -361,7 +355,7 @@ Supported `#[field]` attributes:
 LLMs produce malformed JSON. UniStructGen provides structured validation errors and auto-generated correction prompts to send back to the LLM for self-healing.
 
 ```rust
-use unistructgen_core::{ValidationReport, AiValidationError, map_serde_error};
+use unistructgen::core::{ValidationReport, AiValidationError, map_serde_error};
 
 let mut response_json = llm_client.complete(request).await?;
 
@@ -410,7 +404,7 @@ for attempt in 0..3 {
 Build AI agents that write Rust code and iterate on compiler errors. The `diagnostics` module parses structured output from `cargo check --message-format=json`.
 
 ```rust
-use unistructgen_core::diagnostics::CargoDiagnostics;
+use unistructgen::core::diagnostics::CargoDiagnostics;
 use std::path::Path;
 
 // Run cargo check on a project directory
@@ -439,7 +433,7 @@ if !errors.is_empty() {
 The `patch` module provides `CodeFix` and `Hunk` structs for applying LLM-generated code fixes:
 
 ```rust
-use unistructgen_core::patch::CodeFix;
+use unistructgen::core::patch::CodeFix;
 
 // LLM can output structured fixes as JSON
 let fix: CodeFix = serde_json::from_str(llm_response)?;
@@ -500,18 +494,18 @@ struct_from_external_api! {
 Unified async trait for OpenAI and Ollama with built-in structured output support.
 
 ```rust
-use unistructgen_llm::{LlmClient, CompletionRequest, Message};
+use unistructgen::llm::{LlmClient, CompletionRequest, Message};
 
 // OpenAI (reads OPENAI_API_KEY from env)
-use unistructgen_llm::openai::OpenAiClient;
+use unistructgen::llm::openai::OpenAiClient;
 let openai = OpenAiClient::new("gpt-4o")?;
 
 // Ollama (local, defaults to http://localhost:11434)
-use unistructgen_llm::ollama::OllamaClient;
+use unistructgen::llm::ollama::OllamaClient;
 let ollama = OllamaClient::new("llama3");
 
 // Factory with auto-detection
-use unistructgen_llm::{LlmClientFactory, Provider};
+use unistructgen::llm::{LlmClientFactory, Provider};
 let client = LlmClientFactory::new()
     .with_provider(Provider::Auto) // OpenAI if key exists, else Ollama
     .with_model("gpt-4o")
@@ -551,8 +545,8 @@ Turn your Rust functions into an MCP Server compatible with Claude Desktop, Curs
 
 ```rust
 use unistructgen_macro::ai_tool;
-use unistructgen_core::{ToolRegistry, Context};
-use unistructgen_mcp::serve_stdio;
+use unistructgen::core::{ToolRegistry, Context};
+use unistructgen::mcp::serve_stdio;
 use std::sync::Arc;
 
 #[ai_tool]
@@ -588,8 +582,8 @@ Supported transports:
 Build autonomous agents and pipelines directly in Rust. The runtime handles the ReAct loop (Reasoning + Acting), tool execution, and context management.
 
 ```rust
-use unistructgen_agent::{Agent, AgentPipeline};
-use unistructgen_core::ToolRegistry;
+use unistructgen::agent::{Agent, AgentPipeline};
+use unistructgen::core::ToolRegistry;
 use unistructgen_macro::ai_tool;
 use std::sync::Arc;
 
@@ -643,7 +637,7 @@ generate_struct_from_json! {
 }
 
 // Runtime pipeline
-use unistructgen_json_parser::{JsonParser, ParserOptions};
+use unistructgen::parsers::json::{JsonParser, ParserOptions};
 let mut parser = JsonParser::new(ParserOptions {
     struct_name: "User".into(),
     derive_serde: true,
@@ -719,7 +713,7 @@ generate_struct_from_env! {
 The markdown parser also includes a **semantic chunker** for RAG pipelines:
 
 ```rust
-use unistructgen_markdown_parser::chunker::SemanticChunker;
+use unistructgen::parsers::markdown::chunker::SemanticChunker;
 
 let markdown = std::fs::read_to_string("docs/README.md")?;
 let chunks = SemanticChunker::chunk(&markdown);
@@ -733,7 +727,7 @@ let chunks = SemanticChunker::chunk(&markdown);
 Build IR structs and enums programmatically with a fluent API, then generate Rust code or JSON Schema.
 
 ```rust
-use unistructgen_core::{StructGen, EnumGen, ModuleGen, FieldType, FieldBuilder};
+use unistructgen::core::{StructGen, EnumGen, ModuleGen, FieldType, FieldBuilder};
 
 // Struct
 let code = StructGen::new()
@@ -781,7 +775,7 @@ FieldBuilder::new("email", FieldType::String)
 ### Quick JSON parsing
 
 ```rust
-use unistructgen_core::from_json;
+use unistructgen::core::from_json;
 
 let code = from_json(r#"{"id": 1, "name": "Alice"}"#)
     .struct_name("User")
@@ -796,9 +790,9 @@ let code = from_json(r#"{"id": 1, "name": "Alice"}"#)
 Chain a parser, transformers, and generator into a processing pipeline:
 
 ```rust
-use unistructgen_core::{Pipeline, transformer::FieldOptionalizer};
-use unistructgen_json_parser::{JsonParser, ParserOptions};
-use unistructgen_codegen::{RustRenderer, RenderOptions};
+use unistructgen::core::{Pipeline, transformer::FieldOptionalizer};
+use unistructgen::parsers::json::{JsonParser, ParserOptions};
+use unistructgen::codegen::{RustRenderer, RenderOptions};
 
 let mut pipeline = Pipeline::new(
     JsonParser::new(ParserOptions {
@@ -827,7 +821,7 @@ let rust_code = pipeline.execute(r#"{"id": 1, "name": "Alice"}"#)?;
 Plugins hook into the pipeline at parse and generate stages:
 
 ```rust
-use unistructgen_core::{PluginRegistry, plugin::LoggingPlugin};
+use unistructgen::core::{PluginRegistry, plugin::LoggingPlugin};
 
 let mut plugins = PluginRegistry::new();
 plugins.register(Box::new(LoggingPlugin::new(true)))?;
@@ -842,7 +836,7 @@ let code = plugins.after_generate(code)?;
 ## CLI
 
 ```bash
-cargo install unistructgen
+cargo install unistructgen-cli
 
 # Generate Rust structs from JSON
 unistructgen generate --input data.json --name MyStruct --serde
@@ -923,81 +917,36 @@ FieldConstraints { min_length, max_length, min_value, max_value, pattern, format
 ## Crate Map
 
 ```
-unistructgen/
-├── core/                    # unistructgen-core
-│   └── src/
-│       ├── lib.rs           # Re-exports all public API
-│       ├── ir.rs            # IRModule, IRStruct, IRField, IRTypeRef, PrimitiveKind
-│       ├── api.rs           # StructGen, EnumGen, ModuleGen, FieldBuilder, FieldType
-│       ├── parser.rs        # Parser trait, ParserExt
-│       ├── codegen.rs       # CodeGenerator trait, MultiGenerator
-│       ├── transformer.rs   # IRTransformer trait + 4 built-in transformers
-│       ├── pipeline.rs      # Pipeline, PipelineBuilder
-│       ├── plugin.rs        # Plugin trait, PluginRegistry
-│       ├── visitor.rs       # IRVisitor trait, walk_* functions
-│       ├── tools.rs         # AiTool trait, ToolRegistry, ToolCall
-│       ├── context.rs       # Context (type-safe dependency injection)
-│       ├── validation.rs    # AiValidationError, ValidationReport, map_serde_error
-│       ├── diagnostics.rs   # CargoDiagnostics, CompilerError
-│       ├── patch.rs         # CodeFix, Hunk (LLM code patching)
-│       └── error.rs         # Error types
+unistructgen/                # Main crate (monolith)
+├── src/
+│   ├── lib.rs               # Exports core, codegen, parsers, etc.
+│   ├── core/                # unistructgen::core
+│   │   ├── ir.rs            # IRModule, IRStruct, IRField
+│   │   ├── api.rs           # StructGen, EnumGen
+│   │   ├── parser.rs        # Parser trait
+│   │   ├── codegen.rs       # CodeGenerator trait
+│   │   ├── transformer.rs   # IRTransformer trait
+│   │   ├── tools.rs         # AiTool trait
+│   │   └── ...
+│   ├── codegen/             # unistructgen::codegen
+│   │   ├── lib.rs           # RustRenderer
+│   │   └── json_schema.rs   # JsonSchemaRenderer
+│   ├── parsers/             # unistructgen::parsers
+│   │   ├── json/            # unistructgen::parsers::json
+│   │   ├── openapi/         # unistructgen::parsers::openapi
+│   │   ├── markdown/        # unistructgen::parsers::markdown
+│   │   ├── sql/             # unistructgen::parsers::sql
+│   │   ├── graphql/         # unistructgen::parsers::graphql
+│   │   └── env/             # unistructgen::parsers::env
+│   ├── llm/                 # unistructgen::llm (feature="llm")
+│   ├── mcp/                 # unistructgen::mcp (feature="mcp")
+│   └── agent/               # unistructgen::agent (feature="agent")
 │
-├── codegen/                 # unistructgen-codegen
-│   └── src/
-│       ├── lib.rs           # RustRenderer, RenderOptions
-│       ├── json_schema.rs   # JsonSchemaRenderer (Draft 2020-12)
-│       └── builder.rs       # RustRendererBuilder
+unistructgen-macro/          # Proc-macro crate (separate)
+│   └── src/lib.rs           # generate_struct_from_json!, #[ai_tool], etc.
 │
-├── parsers/
-│   ├── json_parser/         # unistructgen-json-parser
-│   ├── openapi_parser/      # unistructgen-openapi-parser
-│   ├── markdown_parser/     # unistructgen-markdown-parser (+ SemanticChunker)
-│   ├── sql_parser/          # unistructgen-sql-parser
-│   ├── graphql_parser/      # unistructgen-graphql-parser
-│   └── env_parser/          # unistructgen-env-parser
-│
-├── proc-macro/              # unistructgen-macro
-│   └── src/
-│       ├── lib.rs           # 8 macros: generate_struct_from_json!, #[json_struct],
-│       │                    #   struct_from_external_api!, openapi_to_rust!,
-│       │                    #   generate_struct_from_sql!, generate_struct_from_graphql!,
-│       │                    #   generate_struct_from_env!, #[ai_tool]
-│       └── ai_tool.rs       # ai_tool macro implementation
-│
-├── llm/                     # unistructgen-llm
-│   └── src/
-│       ├── lib.rs           # LlmClient trait, CompletionRequest, Message
-│       ├── openai.rs        # OpenAiClient
-│       ├── ollama.rs        # OllamaClient
-│       └── factory.rs       # LlmClientFactory, Provider enum
-│
-├── mcp/                     # unistructgen-mcp
-│   └── src/
-│       ├── lib.rs           # MCP Server exports (serve_stdio, serve_sse)
-│       ├── protocol.rs      # JSON-RPC & MCP types
-│       ├── server.rs        # Core MCP logic
-│       ├── stdio.rs         # Stdio transport
-│       └── sse.rs           # SSE transport (optional)
-│
-├── agent/                   # unistructgen-agent
-│   └── src/
-│       ├── lib.rs           # Agent & Pipeline exports
-│       ├── agent.rs         # ReAct loop implementation
-│       └── pipeline.rs      # DAG orchestration
-│
-├── cli/                     # unistructgen
-│   └── src/
-│       ├── main.rs          # generate, client, fix commands
-│       └── commands/        # Command implementations
-│
-└── examples/
-    ├── tools-agent/         # AI tool registry + batch execution demo
-    ├── docu-agent/          # RAG ingestion + JSON Schema + validation loop
-    ├── code-agent/          # Compiler-driven AI coding loop
-    ├── github-client/       # GitHub API client from OpenAPI
-    ├── blog-api/            # Blog API types from OpenAPI
-    ├── api-example/         # Struct generation from live API
-    └── proc-macro-example/  # All proc macros demonstrated
+unistructgen-cli/            # CLI crate (separate)
+│   └── src/main.rs          # `unistructgen` binary
 ```
 
 ---

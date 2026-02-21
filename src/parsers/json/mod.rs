@@ -3,16 +3,16 @@ pub mod inference;
 
 pub use builder::JsonParserBuilder;
 pub use inference::{
-    SmartTypeInference, TypeInferenceStrategy, CustomTypeDetector,
-    DateTimeDetector, UuidDetector, EmailDetector, UrlDetector,
+    CustomTypeDetector, DateTimeDetector, EmailDetector,
+    SmartTypeInference, TypeInferenceStrategy, UrlDetector, UuidDetector,
 };
 
+use crate::core::{
+    IRField, IRModule, IRStruct, IRType, IRTypeRef, Parser, ParserMetadata, PrimitiveKind,
+};
 use serde_json::Value;
 use std::collections::HashSet;
 use thiserror::Error;
-use crate::core::{
-    IRField, IRModule, IRStruct, IRType, IRTypeRef, PrimitiveKind, Parser, ParserMetadata,
-};
 
 /// Errors that can occur during JSON parsing
 ///

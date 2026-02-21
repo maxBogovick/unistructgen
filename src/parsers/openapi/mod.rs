@@ -37,7 +37,7 @@ pub mod schema;
 pub mod types;
 pub mod validation;
 
-#[cfg(feature = "fetch")]
+#[cfg(feature = "openapi")]
 pub mod fetch;
 
 pub use error::{OpenApiError, Result};

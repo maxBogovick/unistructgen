@@ -26,8 +26,8 @@
 //! ```
 
 use crate::core::{
-    IRModule, IRStruct, IRType, IRField, IRTypeRef, IREnum, IREnumVariant,
-    PrimitiveKind, FieldConstraints,
+    FieldConstraints, IREnum, IREnumVariant, IRField, IRModule, IRStruct, IRType,
+    IRTypeRef, PrimitiveKind,
 };
 
 /// Result type for API operations
@@ -819,7 +819,7 @@ impl JsonGenBuilder {
     }
 
     /// Build the IR module (requires json_parser feature)
-    #[cfg(feature = "json_parser")]
+    #[cfg(feature = "json")]
     pub fn build_module(self) -> ApiResult<IRModule> {
         use crate::parsers::json::{JsonParser, ParserOptions};
         use crate::core::Parser;
@@ -836,7 +836,7 @@ impl JsonGenBuilder {
     }
 
     /// Generate Rust code (requires json_parser feature)
-    #[cfg(feature = "json_parser")]
+    #[cfg(feature = "json")]
     pub fn generate(self) -> ApiResult<std::string::String> {
         let module = self.build_module()?;
         render_module(&module)
@@ -1069,12 +1069,12 @@ fn generate_validation_attrs(constraints: &FieldConstraints) -> Vec<std::string:
 /// Prelude module with commonly used types
 pub mod prelude {
     pub use super::{
-        StructGen, EnumGen, ModuleGen,
+        from_json, render_module, render_module_with_options,
+        ApiError, ApiResult,
+        EnumGen,
         FieldBuilder, FieldType,
-        RenderOptions,
-        ApiResult, ApiError,
-        from_json, JsonGenBuilder,
-        render_module, render_module_with_options,
+        JsonGenBuilder, ModuleGen,
+        RenderOptions, StructGen,
     };
 }
 

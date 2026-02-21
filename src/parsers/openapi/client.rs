@@ -1,10 +1,10 @@
 //! API client trait generation from OpenAPI paths
 
+use crate::core::{IRField, IRStruct, IRType, IRTypeRef, PrimitiveKind};
 use crate::parsers::openapi::error::Result;
 use crate::parsers::openapi::options::OpenApiParserOptions;
 use crate::parsers::openapi::types::{extract_type_name_from_ref, sanitize_field_name, to_pascal_case};
 use openapiv3::{OpenAPI, Operation, PathItem, ReferenceOr};
-use crate::core::{IRField, IRStruct, IRType, IRTypeRef, PrimitiveKind};
 
 /// API client generator
 pub struct ClientGenerator<'a> {

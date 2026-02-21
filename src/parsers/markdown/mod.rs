@@ -1,10 +1,10 @@
 pub mod chunker;
 
-use pulldown_cmark::{Event, Parser as CmarkParser, Tag, Options as CmarkOptions};
-use thiserror::Error;
 use crate::core::{
     IRField, IRModule, IRStruct, IRType, IRTypeRef, Parser, ParserMetadata, PrimitiveKind,
 };
+use pulldown_cmark::{Event, Options as CmarkOptions, Parser as CmarkParser, Tag};
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum MarkdownParserError {

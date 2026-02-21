@@ -1,12 +1,12 @@
-use anyhow::{Result, Context};
-use colored::*; 
+use anyhow::{Context, Result};
+use colored::*;
 use inquire::Confirm;
+use serde_json::json;
 use std::fs;
 use std::path::Path;
 use unistructgen::core::diagnostics::CargoDiagnostics;
 use unistructgen::core::patch::CodeFix;
-use unistructgen::llm::{LlmClient, CompletionRequest, Message, LlmClientFactory};
-use serde_json::json;
+use unistructgen::llm::{CompletionRequest, LlmClientFactory, Message};
 
 pub async fn run_fix() -> Result<()> {
     println!("{}", "Running cargo check...".yellow());

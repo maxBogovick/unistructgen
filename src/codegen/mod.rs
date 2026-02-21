@@ -2,11 +2,11 @@ mod builder;
 mod json_schema;
 
 pub use builder::RustRendererBuilder;
-pub use json_schema::{JsonSchemaRenderer, JsonSchemaError};
+pub use json_schema::{JsonSchemaError, JsonSchemaRenderer};
 
+use crate::core::{CodeGenerator, GeneratorMetadata, IREnum, IRField, IRModule, IRStruct, IRType, IRTypeRef};
 use std::fmt::Write;
 use thiserror::Error;
-use crate::core::{CodeGenerator, GeneratorMetadata, IREnum, IRField, IRModule, IRStruct, IRType, IRTypeRef};
 
 /// Errors that can occur during code generation
 ///

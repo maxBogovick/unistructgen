@@ -1,8 +1,8 @@
-use graphql_parser::schema::{parse_schema, Definition, TypeDefinition, Type};
-use thiserror::Error;
 use crate::core::{
-    IRField, IRModule, IRStruct, IRType, IRTypeRef, PrimitiveKind, Parser, ParserMetadata,
+    IRField, IRModule, IRStruct, IRType, IRTypeRef, Parser, ParserMetadata, PrimitiveKind,
 };
+use graphql_parser::schema::{parse_schema, Definition, Type, TypeDefinition};
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum GraphqlParserError {

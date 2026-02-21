@@ -1,5 +1,5 @@
 use unistructgen_macro::{generate_struct_from_env, generate_struct_from_sql, generate_struct_from_graphql};
-use serde::{Serialize, Deserialize};
+use serde;
 
 // Test Env
 generate_struct_from_env! {
